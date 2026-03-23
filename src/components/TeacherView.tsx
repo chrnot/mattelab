@@ -2,8 +2,93 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff, Info, HelpCircle } from 'lucide-react';
 
-const TeacherView: React.FC = () => {
+import { Lab } from '../types';
+
+interface TeacherViewProps {
+  currentLab: Lab;
+}
+
+const TeacherView: React.FC<TeacherViewProps> = ({ currentLab }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  if (currentLab === Lab.HOME) return null;
+
+  const getContent = () => {
+    switch (currentLab) {
+      case Lab.FROG_JUMP:
+        return {
+          title: 'Grodtricket',
+          body: (
+            <>
+              <p>
+                Det kritiska ögonblicket är det <span className="font-bold text-stone-800">tredje draget</span>. 
+                Efter att ha flyttat den första röda grodan och hoppat över den med en grön groda, 
+                måste man flytta <span className="font-bold text-stone-800 italic">nästa gröna groda</span> till den tomma platsen.
+              </p>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-100 italic">
+                "Flytta aldrig två grodor av samma färg intill varandra, om de inte redan är på sina slutplatser."
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Hur ser vi att n(n+2) är samma som n² + 2n?</li>
+                  <li>Varför ökar antalet hopp med 5, 7, 9...?</li>
+                </ul>
+              </div>
+            </>
+          ),
+          footer: 'Facit: h = n² + 2n'
+        };
+      case Lab.MAGIC_SQUARE:
+        return {
+          title: 'Magiska Mönster',
+          body: (
+            <>
+              <p>
+                I en 3x3 magisk kvadrat med en aritmetisk talföljd är <span className="font-bold text-stone-800">mitten-talet</span> alltid 1/3 av den magiska summan.
+              </p>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-100 italic">
+                "Motsatta tal (genom mitten) bildar par som summeras till 2 gånger mitten-talet."
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Varför kan inte 9:an ligga i ett hörn i 1-9 kvadraten?</li>
+                  <li>Hur kan vi förutsäga summan innan vi börjar?</li>
+                </ul>
+              </div>
+            </>
+          ),
+          footer: 'Facit: S = 3 * Mitten-talet'
+        };
+      case Lab.GEOBOARD:
+        return {
+          title: 'Geometriska Gåtor',
+          body: (
+            <>
+              <p>
+                Geobrädet är ett kraftfullt verktyg för att visualisera <span className="font-bold text-stone-800">area</span> och <span className="font-bold text-stone-800">omkrets</span>.
+              </p>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-100 italic">
+                "Använd Picks formel: Area = Inre spikar + (Randspikar / 2) - 1."
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Varför har en kvadrat med sidan √2 arean 2?</li>
+                  <li>Kan vi skapa en liksidig triangel på ett geobräde?</li>
+                </ul>
+              </div>
+            </>
+          ),
+          footer: 'Picks formel: A = I + B/2 - 1'
+        };
+      default:
+        return { title: '', body: <></>, footer: '' };
+    }
+  };
+
+  const content = getContent();
 
   return (
     <div className="fixed bottom-8 right-8 z-50">
@@ -28,32 +113,17 @@ const TeacherView: React.FC = () => {
             <div className="flex flex-col space-y-6">
               <div className="flex items-center space-x-3 text-amber-600">
                 <Info size={24} />
-                <h3 className="text-xl font-serif font-medium italic">Grodtricket</h3>
+                <h3 className="text-xl font-serif font-medium italic">{content.title}</h3>
               </div>
 
               <div className="space-y-4 text-stone-600 text-sm leading-relaxed">
-                <p>
-                  Det kritiska ögonblicket är det <span className="font-bold text-stone-800">tredje draget</span>. 
-                  Efter att ha flyttat den första röda grodan och hoppat över den med en grön groda, 
-                  måste man flytta <span className="font-bold text-stone-800 italic">nästa gröna groda</span> till den tomma platsen.
-                </p>
-                <div className="p-4 bg-stone-50 rounded-xl border border-stone-100 italic">
-                  "Flytta aldrig två grodor av samma färg intill varandra, om de inte redan är på sina slutplatser."
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
-                  <ul className="list-disc list-inside space-y-1">
-                    <li>Hur ser vi att n(n+2) är samma som n² + 2n?</li>
-                    <li>Varför ökar antalet hopp med 5, 7, 9...?</li>
-                    <li>Vad händer om vi har olika antal grodor i familjerna?</li>
-                  </ul>
-                </div>
+                {content.body}
               </div>
 
               <div className="pt-4 border-t border-stone-100">
                 <div className="flex items-center space-x-2 text-stone-400">
                   <HelpCircle size={16} />
-                  <span className="text-xs uppercase tracking-widest">Facit: h = n² + 2n</span>
+                  <span className="text-xs uppercase tracking-widest">{content.footer}</span>
                 </div>
               </div>
             </div>

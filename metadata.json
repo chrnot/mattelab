@@ -1,5 +1,5 @@
 {
-  "name": "Grodhopp",
-  "description": "Ett interaktivt och undersökande verktyg för att utforska mönster och algebra genom det klassiska pusslet med grodor som byter plats.",
+  "name": "MatteLab Digital",
+  "description": "En interaktiv plattform för digitala matematiklaborationer, inklusive Grodhopp och Magiska Kvadrater.",
   "requestFramePermissions": []
 }
