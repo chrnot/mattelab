@@ -53,6 +53,8 @@ const GeoboardLab: React.FC = () => {
   const [phase, setPhase] = useState<Phase>(Phase.MODUL_1);
   const [bands, setBands] = useState<Band[]>([]);
   const [activeBandId, setActiveBandId] = useState<string | null>(null);
+  const [hoveredSpikeId, setHoveredSpikeId] = useState<number | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [showGridLines, setShowGridLines] = useState(false);
   const [bookkeeping, setBookkeeping] = useState<BookkeepingEntry[]>([]);
   
@@ -79,6 +81,67 @@ const GeoboardLab: React.FC = () => {
     };
     setBands([...bands, newBand]);
     setActiveBandId(id);
+    setIsDrawing(false);
+  };
+
+  const handleStartDrawing = () => {
+    setIsDrawing(true);
+    setActiveBandId(null);
+  };
+
+  const handleSpikeClick = (spikeId: number) => {
+    if (isDrawing) {
+      const id = Math.random().toString(36).substr(2, 9);
+      const newBand: Band = {
+        id,
+        points: [spikeId],
+        color: COLORS[bands.length % COLORS.length],
+        isClosed: false,
+      };
+      setBands([...bands, newBand]);
+      setActiveBandId(id);
+      setIsDrawing(false);
+      return;
+    }
+
+    if (activeBandId) {
+      const newBands = [...bands];
+      const bIdx = newBands.findIndex(b => b.id === activeBandId);
+      if (bIdx === -1) return;
+
+      const band = newBands[bIdx];
+      if (!band.isClosed) {
+        // If clicking the first point, close the band
+        if (band.points[0] === spikeId && band.points.length >= 3) {
+          band.isClosed = true;
+        } else if (!band.points.includes(spikeId)) {
+          band.points.push(spikeId);
+        }
+        setBands(newBands);
+      } else {
+        // If already closed, maybe select it?
+        setActiveBandId(activeBandId);
+      }
+    }
+  };
+
+  const handleDeleteBand = (id: string) => {
+    setBands(bands.filter(b => b.id !== id));
+    if (activeBandId === id) setActiveBandId(null);
+  };
+
+  const handleDeleteVertex = (bandId: string, vertexIndex: number) => {
+    const newBands = [...bands];
+    const bIdx = newBands.findIndex(b => b.id === bandId);
+    if (bIdx === -1) return;
+
+    if (newBands[bIdx].points.length <= 3) {
+      handleDeleteBand(bandId);
+      return;
+    }
+
+    newBands[bIdx].points.splice(vertexIndex, 1);
+    setBands(newBands);
   };
 
   const handleReset = () => {
@@ -103,10 +166,22 @@ const GeoboardLab: React.FC = () => {
   };
 
   const handlePointDragMove = (bandId: string, pointIndex: number, pos: { x: number, y: number }) => {
-    // Visual feedback: vibrating effect if stretched far (simulated by opacity/glow)
+    // Find nearest spike for visual feedback
+    const nearest = spikes.reduce((prev, curr) => {
+      const distPrev = Math.hypot(prev.x - pos.x, prev.y - pos.y);
+      const distCurr = Math.hypot(curr.x - pos.x, curr.y - pos.y);
+      return distCurr < distPrev ? curr : prev;
+    });
+    
+    if (Math.hypot(nearest.x - pos.x, nearest.y - pos.y) < spacing / 2) {
+      setHoveredSpikeId(nearest.id);
+    } else {
+      setHoveredSpikeId(null);
+    }
   };
 
   const handlePointDragEnd = (bandId: string, pointIndex: number, pos: { x: number, y: number }) => {
+    setHoveredSpikeId(null);
     // Snap to nearest spike
     const nearest = spikes.reduce((prev, curr) => {
       const distPrev = Math.hypot(prev.x - pos.x, prev.y - pos.y);
@@ -131,6 +206,7 @@ const GeoboardLab: React.FC = () => {
   };
 
   const handleSegmentDragEnd = (bandId: string, segmentIndex: number, pos: { x: number, y: number }) => {
+    setHoveredSpikeId(null);
     // Add a new point to the band at the nearest spike
     const nearest = spikes.reduce((prev, curr) => {
       const distPrev = Math.hypot(prev.x - pos.x, prev.y - pos.y);
@@ -261,15 +337,18 @@ const GeoboardLab: React.FC = () => {
                         <Line
                           points={points}
                           stroke={band.color}
-                          strokeWidth={10}
+                          strokeWidth={12}
                           lineCap="round"
                           lineJoin="round"
                           closed={band.isClosed}
                           opacity={activeBandId === band.id ? 1 : 0.4}
-                          onClick={() => setActiveBandId(band.id)}
+                          onClick={() => {
+                            setActiveBandId(band.id);
+                            setIsDrawing(false);
+                          }}
                           shadowColor="black"
-                          shadowBlur={activeBandId === band.id ? 5 : 0}
-                          shadowOpacity={0.2}
+                          shadowBlur={activeBandId === band.id ? 10 : 0}
+                          shadowOpacity={0.3}
                         />
 
                         {/* Mid-segment handles for adding points */}
@@ -285,10 +364,11 @@ const GeoboardLab: React.FC = () => {
                               key={`mid-${i}`}
                               x={midX}
                               y={midY}
-                              radius={4}
+                              radius={activeBandId === band.id ? 6 : 0}
                               fill={band.color}
-                              opacity={0.5}
+                              opacity={0.6}
                               draggable
+                              onDragMove={(e) => handlePointDragMove(band.id, -1, e.target.position())}
                               onDragEnd={(e) => {
                                 handleSegmentDragEnd(band.id, i, e.target.position());
                                 e.target.position({ x: 0, y: 0 });
@@ -303,7 +383,7 @@ const GeoboardLab: React.FC = () => {
                             key={`vertex-${i}`}
                             x={spikes[idx].x}
                             y={spikes[idx].y}
-                            radius={8}
+                            radius={activeBandId === band.id ? 10 : 6}
                             fill="white"
                             stroke={band.color}
                             strokeWidth={3}
@@ -313,6 +393,10 @@ const GeoboardLab: React.FC = () => {
                               handlePointDragEnd(band.id, i, e.target.position());
                               e.target.position({ x: 0, y: 0 });
                             }}
+                            onDblClick={() => handleDeleteVertex(band.id, i)}
+                            shadowColor="black"
+                            shadowBlur={activeBandId === band.id ? 4 : 0}
+                            shadowOpacity={0.2}
                           />
                         ))}
                       </Group>
@@ -321,32 +405,81 @@ const GeoboardLab: React.FC = () => {
 
                   {/* Spikes */}
                   {spikes.map((spike) => (
-                    <Circle
-                      key={spike.id}
-                      x={spike.x}
-                      y={spike.y}
-                      radius={5}
-                      fill="#292524"
-                      shadowColor="black"
-                      shadowBlur={2}
-                      shadowOffset={{ x: 1, y: 1 }}
-                      shadowOpacity={0.5}
-                    />
+                    <Group key={spike.id}>
+                      {/* Hover Effect */}
+                      {hoveredSpikeId === spike.id && (
+                        <Circle
+                          x={spike.x}
+                          y={spike.y}
+                          radius={12}
+                          fill={activeBandId ? bands.find(b => b.id === activeBandId)?.color : '#fbbf24'}
+                          opacity={0.3}
+                        />
+                      )}
+                      <Circle
+                        x={spike.x}
+                        y={spike.y}
+                        radius={5}
+                        fill="#292524"
+                        shadowColor="black"
+                        shadowBlur={2}
+                        shadowOffset={{ x: 1, y: 1 }}
+                        shadowOpacity={0.5}
+                        onClick={() => handleSpikeClick(spike.id)}
+                        onMouseEnter={() => !hoveredSpikeId && setHoveredSpikeId(spike.id)}
+                        onMouseLeave={() => setHoveredSpikeId(null)}
+                      />
+                    </Group>
                   ))}
                 </Layer>
               </Stage>
 
               {/* Controls Overlay */}
               <div className="absolute bottom-12 right-12 flex flex-col space-y-3">
+                <AnimatePresence>
+                  {activeBandId && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleDeleteBand(activeBandId)}
+                      className="w-12 h-12 bg-red-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20"
+                      title="Ta bort band"
+                    >
+                      <Trash2 size={20} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+                
                 <motion.button 
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={handleAddBand}
                   className="w-16 h-16 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-xl shadow-amber-500/30 transition-transform"
+                  title="Lägg till färdigt band"
                 >
                   <Plus size={32} />
                 </motion.button>
+
+                <motion.button 
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleStartDrawing}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-all ${isDrawing ? 'bg-stone-800 text-white' : 'bg-white text-stone-600 border border-stone-200'}`}
+                  title="Rita eget band"
+                >
+                  <Scissors size={20} />
+                </motion.button>
               </div>
+
+              {/* Drawing Indicator */}
+              {isDrawing && (
+                <div className="absolute top-12 right-12 bg-amber-500 text-white px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest animate-pulse shadow-lg">
+                  Klicka på en pinne för att börja rita
+                </div>
+              )}
 
               {/* Area Display for active band */}
               {activeBandId && (
