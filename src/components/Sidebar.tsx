@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Lab } from '../types';
-import { DraftingCompass, CircleDot, Square, ChevronDown, ChevronRight, Menu, Shapes, Home } from 'lucide-react';
+import { 
+  DraftingCompass, 
+  CircleDot, 
+  Square, 
+  ChevronDown, 
+  ChevronRight, 
+  Menu, 
+  Shapes, 
+  Home,
+  Hash,
+  Calculator,
+  BarChart,
+  TrendingUp,
+  Lightbulb
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface SidebarProps {
@@ -10,27 +24,83 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentLab, onSelectLab }) => {
   const [isExpanded, setIsExpanded] = useState(currentLab !== Lab.HOME);
-  const [isLabsOpen, setIsLabsOpen] = useState(true);
+  const [openCategories, setOpenCategories] = useState<string[]>([]);
 
   useEffect(() => {
     if (currentLab === Lab.HOME) {
       setIsExpanded(false);
     } else {
       setIsExpanded(true);
+      // Automatically open the category containing the current lab
+      const category = categories.find(cat => cat.labs.some(lab => lab.id === currentLab));
+      if (category && !openCategories.includes(category.id)) {
+        setOpenCategories(prev => [...prev, category.id]);
+      }
     }
   }, [currentLab]);
 
-  const labs = [
-    { id: Lab.HOME, label: 'Hem', icon: Home },
-    { id: Lab.FROG_JUMP, label: 'Grodhopp', icon: CircleDot },
-    { id: Lab.MAGIC_SQUARE, label: 'Magiska Kvadrater', icon: Square },
-    { id: Lab.GEOBOARD, label: 'Geobräde', icon: Shapes },
+  const toggleCategory = (categoryId: string) => {
+    if (!isExpanded) {
+      setIsExpanded(true);
+      setOpenCategories([categoryId]);
+      return;
+    }
+    setOpenCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId) 
+        : [...prev, categoryId]
+    );
+  };
+
+  const categories = [
+    {
+      id: 'tal',
+      label: 'Taluppfattning',
+      icon: Hash,
+      labs: []
+    },
+    {
+      id: 'alg',
+      label: 'Algebra',
+      icon: Calculator,
+      labs: []
+    },
+    {
+      id: 'geo',
+      label: 'Geometri',
+      icon: Shapes,
+      labs: [
+        { id: Lab.GEOBOARD, label: 'Geobräde', icon: Shapes }
+      ]
+    },
+    {
+      id: 'stat',
+      label: 'Sannolikhet och statistik',
+      icon: BarChart,
+      labs: []
+    },
+    {
+      id: 'samband',
+      label: 'Samband och förändring',
+      icon: TrendingUp,
+      labs: [
+        { id: Lab.FROG_JUMP, label: 'Grodhopp', icon: CircleDot }
+      ]
+    },
+    {
+      id: 'problem',
+      label: 'Problemlösning',
+      icon: Lightbulb,
+      labs: [
+        { id: Lab.MAGIC_SQUARE, label: 'Magiska Kvadrater', icon: Square }
+      ]
+    }
   ];
 
   return (
     <motion.div 
       initial={false}
-      animate={{ width: isExpanded ? 280 : 80 }}
+      animate={{ width: isExpanded ? 300 : 80 }}
       className="bg-white border-r border-stone-200 flex flex-col h-screen sticky top-0 z-50 shadow-sm"
     >
       {/* Header / Logo */}
@@ -66,43 +136,88 @@ const Sidebar: React.FC<SidebarProps> = ({ currentLab, onSelectLab }) => {
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        <AnimatePresence>
-          {isLabsOpen || !isExpanded ? (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-1"
-            >
-              {isExpanded && (
-                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400 px-4 mb-4 mt-2">Laborationer</p>
-              )}
-              {labs.map((lab) => (
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+        {/* Home Button */}
+        <button
+          onClick={() => onSelectLab(Lab.HOME)}
+          className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all group mb-4 ${
+            currentLab === Lab.HOME
+              ? 'bg-stone-900 text-white shadow-md'
+              : 'hover:bg-stone-50 text-stone-500 hover:text-stone-900'
+          }`}
+          title={!isExpanded ? 'Hem' : ''}
+        >
+          <Home size={20} className={currentLab === Lab.HOME ? 'text-white' : 'text-stone-400 group-hover:text-stone-600'} />
+          {isExpanded && (
+            <span className="font-bold text-xs uppercase tracking-widest whitespace-nowrap">Hem</span>
+          )}
+        </button>
+
+        <div className="space-y-1">
+          {isExpanded && (
+            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-stone-400 px-4 mb-4 mt-2">Kategorier</p>
+          )}
+          
+          {categories.map((category) => {
+            const isOpen = openCategories.includes(category.id);
+            const hasActiveLab = category.labs.some(lab => lab.id === currentLab);
+
+            return (
+              <div key={category.id} className="space-y-1">
                 <button
-                  key={lab.id}
-                  onClick={() => onSelectLab(lab.id)}
+                  onClick={() => toggleCategory(category.id)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all group ${
-                    currentLab === lab.id
-                      ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
-                      : 'hover:bg-stone-50 text-stone-500 hover:text-stone-900'
-                  }`}
-                  title={!isExpanded ? lab.label : ''}
+                    isOpen && isExpanded ? 'bg-stone-50 text-stone-900' : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
+                  } ${hasActiveLab && !isOpen ? 'border-l-4 border-amber-500 rounded-l-none' : ''}`}
+                  title={!isExpanded ? category.label : ''}
                 >
-                  <lab.icon size={20} className={currentLab === lab.id ? 'text-white' : 'text-stone-400 group-hover:text-stone-600'} />
+                  <category.icon size={20} className={isOpen || hasActiveLab ? 'text-amber-500' : 'text-stone-400 group-hover:text-stone-600'} />
                   {isExpanded && (
-                    <span className="font-bold text-xs uppercase tracking-widest whitespace-nowrap">{lab.label}</span>
+                    <span className="font-bold text-[11px] uppercase tracking-wider whitespace-nowrap flex-1 text-left">{category.label}</span>
                   )}
-                  {isExpanded && currentLab === lab.id && (
-                    <div className="ml-auto">
-                      <ChevronRight size={14} />
-                    </div>
+                  {isExpanded && (
+                    <motion.div
+                      animate={{ rotate: isOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown size={14} className="text-stone-400" />
+                    </motion.div>
                   )}
                 </button>
-              ))}
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+
+                <AnimatePresence>
+                  {isOpen && isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="pl-4 space-y-1 overflow-hidden"
+                    >
+                      {category.labs.length > 0 ? (
+                        category.labs.map((lab) => (
+                          <button
+                            key={lab.id}
+                            onClick={() => onSelectLab(lab.id)}
+                            className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all group ${
+                              currentLab === lab.id
+                                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+                                : 'hover:bg-stone-50 text-stone-500 hover:text-stone-900'
+                            }`}
+                          >
+                            <lab.icon size={16} className={currentLab === lab.id ? 'text-white' : 'text-stone-400 group-hover:text-stone-600'} />
+                            <span className="font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">{lab.label}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <p className="text-[9px] text-stone-400 italic px-4 py-2">Inga laborationer ännu</p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
       </nav>
       
       {/* Footer Status */}
