@@ -5,6 +5,9 @@ import Home from './components/Home';
 import FrogJumpLab from './components/FrogJumpLab';
 import MagicSquareLab from './components/MagicSquareLab';
 import GeoboardLab from './components/GeoboardLab';
+import DecimalCalculatorLab from './components/DecimalCalculatorLab';
+import SmartCalculatorLab from './components/SmartCalculatorLab';
+import IceCreamLab from './components/IceCreamLab';
 import TeacherView from './components/TeacherView';
 
 const App: React.FC = () => {
@@ -21,8 +24,14 @@ const App: React.FC = () => {
           <FrogJumpLab />
         ) : currentLab === Lab.MAGIC_SQUARE ? (
           <MagicSquareLab />
-        ) : (
+        ) : currentLab === Lab.GEOBOARD ? (
           <GeoboardLab />
+        ) : currentLab === Lab.DECIMAL_CALCULATOR ? (
+          <DecimalCalculatorLab />
+        ) : currentLab === Lab.SMART_CALCULATOR ? (
+          <SmartCalculatorLab />
+        ) : (
+          <IceCreamLab />
         )}
         
         <TeacherView currentLab={currentLab} />

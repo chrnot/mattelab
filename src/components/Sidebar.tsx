@@ -13,7 +13,8 @@ import {
   Calculator,
   BarChart,
   TrendingUp,
-  Lightbulb
+  Lightbulb,
+  IceCream
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -57,7 +58,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentLab, onSelectLab }) => {
       id: 'tal',
       label: 'Taluppfattning',
       icon: Hash,
-      labs: []
+      labs: [
+        { id: Lab.DECIMAL_CALCULATOR, label: 'Decimaltal på räknaren', icon: Calculator },
+        { id: Lab.SMART_CALCULATOR, label: 'Den Smarta Räknaren', icon: Lightbulb }
+      ]
     },
     {
       id: 'alg',
@@ -92,7 +96,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentLab, onSelectLab }) => {
       label: 'Problemlösning',
       icon: Lightbulb,
       labs: [
-        { id: Lab.MAGIC_SQUARE, label: 'Magiska Kvadrater', icon: Square }
+        { id: Lab.MAGIC_SQUARE, label: 'Magiska Kvadrater', icon: Square },
+        { id: Lab.ICE_CREAM, label: 'Glass-labbet', icon: IceCream }
       ]
     }
   ];

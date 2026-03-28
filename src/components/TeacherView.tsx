@@ -83,6 +83,75 @@ const TeacherView: React.FC<TeacherViewProps> = ({ currentLab }) => {
           ),
           footer: 'Picks formel: A = I + B/2 - 1'
         };
+      case Lab.DECIMAL_CALCULATOR:
+        return {
+          title: 'Decimaltal på räknaren',
+          body: (
+            <>
+              <p>
+                Miniräknaren används här som ett didaktiskt verktyg för att ge elever fördjupad förståelse för <span className="font-bold text-stone-800">decimaltal</span>.
+              </p>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-100 italic">
+                "Uppmuntra eleverna att förutsäga resultatet innan de trycker på '='."
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Vad händer med siffrorna när vi multiplicerar med 10?</li>
+                  <li>Varför blir 0,5 * 0,5 = 0,25?</li>
+                  <li>Hur kan vi jämföra 0,6 och 0,58 på ett säkert sätt?</li>
+                </ul>
+              </div>
+            </>
+          ),
+          footer: 'Tips: Arbeta i par för diskussion'
+        };
+      case Lab.SMART_CALCULATOR:
+        return {
+          title: 'Den Smarta Räknaren',
+          body: (
+            <>
+              <p>
+                Denna widget visualiserar kopplingen mellan <span className="font-bold text-stone-800">knapptryckningar</span> och <span className="font-bold text-stone-800">platsvärdessystemet</span>.
+              </p>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-100 italic">
+                "Fokusera på att siffrorna flyttar sig mellan kolumnerna, istället för att kommat flyttar sig."
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Varför glider siffrorna åt vänster vid multiplikation?</li>
+                  <li>Vad händer med värdet på siffra 2 när den flyttar från ental till tiotal?</li>
+                  <li>Hur visar visualiseringen att 0,6 är större än 0,58?</li>
+                </ul>
+              </div>
+            </>
+          ),
+          footer: 'Didaktik: Visualisera platsvärde'
+        };
+      case Lab.ICE_CREAM:
+        return {
+          title: 'Glass-labbet (Kombinatorik)',
+          body: (
+            <>
+              <p>
+                Ett klassiskt kombinatorikproblem som introducerar <span className="font-bold text-stone-800">KLAG-modellen</span> (Konkret, Logiskt, Algebraiskt, Grafiskt).
+              </p>
+              <div className="p-4 bg-stone-50 rounded-xl border border-stone-100 italic">
+                "Det är viktigt att zappa mellan olika uttrycksformer för att fördjupa förståelsen."
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Spelar ordningen någon roll? (Är jordgubb+choklad samma som choklad+jordgubb?)</li>
+                  <li>Får man välja två av samma smak?</li>
+                  <li>Hur kan vi rita eller skriva för att vara säkra på att vi hittat alla?</li>
+                </ul>
+              </div>
+            </>
+          ),
+          footer: 'KLAG: Konkret, Logiskt, Algebraiskt, Grafiskt'
+        };
       default:
         return { title: '', body: <></>, footer: '' };
     }
