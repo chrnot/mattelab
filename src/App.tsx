@@ -8,14 +8,21 @@ import GeoboardLab from './components/GeoboardLab';
 import DecimalCalculatorLab from './components/DecimalCalculatorLab';
 import SmartCalculatorLab from './components/SmartCalculatorLab';
 import IceCreamLab from './components/IceCreamLab';
+import RichProblemLab from './components/RichProblemLab';
 import TeacherView from './components/TeacherView';
 
 const App: React.FC = () => {
   const [currentLab, setCurrentLab] = useState<Lab>(Lab.HOME);
+  const [isTeacherViewOpen, setIsTeacherViewOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-stone-100 text-stone-900 font-sans selection:bg-amber-200 overflow-hidden">
-      <Sidebar currentLab={currentLab} onSelectLab={setCurrentLab} />
+      <Sidebar 
+        currentLab={currentLab} 
+        onSelectLab={setCurrentLab} 
+        isTeacherViewOpen={isTeacherViewOpen}
+        onToggleTeacherView={() => setIsTeacherViewOpen(!isTeacherViewOpen)}
+      />
       
       <div className="flex-1 flex flex-col relative overflow-hidden">
         {currentLab === Lab.HOME ? (
@@ -30,11 +37,13 @@ const App: React.FC = () => {
           <DecimalCalculatorLab />
         ) : currentLab === Lab.SMART_CALCULATOR ? (
           <SmartCalculatorLab />
-        ) : (
+        ) : currentLab === Lab.ICE_CREAM ? (
           <IceCreamLab />
+        ) : (
+          <RichProblemLab />
         )}
         
-        <TeacherView currentLab={currentLab} />
+        <TeacherView currentLab={currentLab} isOpen={isTeacherViewOpen} onToggle={() => setIsTeacherViewOpen(!isTeacherViewOpen)} />
       </div>
     </div>
   );

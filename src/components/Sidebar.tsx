@@ -14,16 +14,25 @@ import {
   BarChart,
   TrendingUp,
   Lightbulb,
-  IceCream
+  IceCream,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface SidebarProps {
   currentLab: Lab;
   onSelectLab: (lab: Lab) => void;
+  isTeacherViewOpen: boolean;
+  onToggleTeacherView: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentLab, onSelectLab }) => {
+const Sidebar: React.FC<SidebarProps> = ({ 
+  currentLab, 
+  onSelectLab, 
+  isTeacherViewOpen, 
+  onToggleTeacherView 
+}) => {
   const [isExpanded, setIsExpanded] = useState(currentLab !== Lab.HOME);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
 
@@ -97,7 +106,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentLab, onSelectLab }) => {
       icon: Lightbulb,
       labs: [
         { id: Lab.MAGIC_SQUARE, label: 'Magiska Kvadrater', icon: Square },
-        { id: Lab.ICE_CREAM, label: 'Glass-labbet', icon: IceCream }
+        { id: Lab.ICE_CREAM, label: 'Glass-labbet', icon: IceCream },
+        { id: Lab.RICH_PROBLEM_LAB, label: 'Det Rika Problemlabbet', icon: Lightbulb }
       ]
     }
   ];
@@ -225,8 +235,25 @@ const Sidebar: React.FC<SidebarProps> = ({ currentLab, onSelectLab }) => {
         </div>
       </nav>
       
-      {/* Footer Status */}
-      <div className="p-4 border-t border-stone-100">
+      {/* Footer Status & Teacher View */}
+      <div className="p-4 border-t border-stone-100 space-y-2">
+        {currentLab !== Lab.HOME && (
+          <button
+            onClick={onToggleTeacherView}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all group ${
+              isTeacherViewOpen
+                ? 'bg-stone-900 text-white shadow-md'
+                : 'bg-stone-50 text-stone-500 hover:text-stone-900 border border-stone-100'
+            }`}
+            title={!isExpanded ? 'Lärarvy' : ''}
+          >
+            {isTeacherViewOpen ? <EyeOff size={20} /> : <Eye size={20} />}
+            {isExpanded && (
+              <span className="font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">Lärarvy</span>
+            )}
+          </button>
+        )}
+
         <div className={`p-4 rounded-2xl transition-all ${isExpanded ? 'bg-stone-50 border border-stone-100' : 'bg-transparent border-none p-0 flex justify-center'}`}>
           {isExpanded ? (
             <>

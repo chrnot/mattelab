@@ -25,6 +25,10 @@ const FLAVORS: Flavor[] = [
   { id: 'chocolate', name: 'Choklad', color: 'bg-amber-900', letter: 'C' },
   { id: 'vanilla', name: 'Vanilj', color: 'bg-yellow-50', letter: 'V' },
   { id: 'blueberry', name: 'Blåbär', color: 'bg-indigo-600', letter: 'B' },
+  { id: 'mint', name: 'Mint', color: 'bg-emerald-400', letter: 'M' },
+  { id: 'lemon', name: 'Citron', color: 'bg-yellow-300', letter: 'L' },
+  { id: 'pear', name: 'Päron', color: 'bg-lime-400', letter: 'P' },
+  { id: 'caramel', name: 'Kola', color: 'bg-orange-400', letter: 'K' },
 ];
 
 interface Combination {
@@ -35,12 +39,22 @@ interface Combination {
 const IceCreamLab: React.FC = () => {
   const [currentCone, setCurrentCone] = useState<Flavor[]>([]);
   const [savedCombinations, setSavedCombinations] = useState<Combination[]>([]);
+  const [scoopCount, setScoopCount] = useState(2);
+  const [flavorCount, setFlavorCount] = useState(4);
   const [allowSameFlavor, setAllowSameFlavor] = useState(false);
   const [orderMatters, setOrderMatters] = useState(false);
   const [showKLAG, setShowKLAG] = useState(false);
 
+  const activeFlavors = FLAVORS.slice(0, flavorCount);
+
+  // Reset when settings change to avoid invalid states
+  useEffect(() => {
+    setCurrentCone([]);
+    setSavedCombinations([]);
+  }, [scoopCount, flavorCount, allowSameFlavor, orderMatters]);
+
   const addFlavor = (flavor: Flavor) => {
-    if (currentCone.length >= 2) return;
+    if (currentCone.length >= scoopCount) return;
     
     if (!allowSameFlavor && currentCone.some(f => f.id === flavor.id)) {
       return;
@@ -54,16 +68,16 @@ const IceCreamLab: React.FC = () => {
   };
 
   const saveCombination = () => {
-    if (currentCone.length < 2) return;
+    if (currentCone.length < scoopCount) return;
 
     // Check if already exists based on rules
     const exists = savedCombinations.some(combo => {
       if (orderMatters) {
-        return combo.flavors[0].id === currentCone[0].id && combo.flavors[1].id === currentCone[1].id;
+        return combo.flavors.every((f, i) => f.id === currentCone[i].id);
       } else {
         const ids1 = combo.flavors.map(f => f.id).sort();
         const ids2 = currentCone.map(f => f.id).sort();
-        return ids1[0] === ids2[0] && ids1[1] === ids2[1];
+        return ids1.every((id, i) => id === ids2[i]);
       }
     });
 
@@ -105,6 +119,30 @@ const IceCreamLab: React.FC = () => {
 
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-4 bg-stone-100 p-1 rounded-xl">
+            <div className="flex items-center px-2 space-x-2 border-r border-stone-200 mr-2">
+              <span className="text-[10px] font-bold text-stone-400 uppercase">Smaker:</span>
+              {[4, 6, 8].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setFlavorCount(n)}
+                  className={`w-8 h-8 rounded-lg text-[10px] font-bold transition-all ${flavorCount === n ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center px-2 space-x-2 border-r border-stone-200 mr-2">
+              <span className="text-[10px] font-bold text-stone-400 uppercase">Kulor:</span>
+              {[2, 3, 4].map(n => (
+                <button
+                  key={n}
+                  onClick={() => setScoopCount(n)}
+                  className={`w-8 h-8 rounded-lg text-[10px] font-bold transition-all ${scoopCount === n ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
             <button 
               onClick={() => setAllowSameFlavor(!allowSameFlavor)}
               className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center space-x-2 ${allowSameFlavor ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-400 hover:text-stone-600'}`}
@@ -140,21 +178,21 @@ const IceCreamLab: React.FC = () => {
             {/* Glassbar */}
             <div className="bg-white p-8 rounded-[32px] shadow-sm border border-stone-200">
               <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 mb-6">Välj smaker</h3>
-              <div className="grid grid-cols-4 gap-6">
-                {FLAVORS.map(flavor => (
+              <div className="grid grid-cols-4 sm:grid-cols-8 gap-4">
+                {activeFlavors.map(flavor => (
                   <button
                     key={flavor.id}
                     onClick={() => addFlavor(flavor)}
-                    disabled={currentCone.length >= 2 || (!allowSameFlavor && currentCone.some(f => f.id === flavor.id))}
-                    className={`group relative flex flex-col items-center p-4 rounded-2xl transition-all ${
-                      currentCone.length >= 2 || (!allowSameFlavor && currentCone.some(f => f.id === flavor.id))
+                    disabled={currentCone.length >= scoopCount || (!allowSameFlavor && currentCone.some(f => f.id === flavor.id))}
+                    className={`group relative flex flex-col items-center p-2 rounded-2xl transition-all ${
+                      currentCone.length >= scoopCount || (!allowSameFlavor && currentCone.some(f => f.id === flavor.id))
                         ? 'opacity-40 grayscale cursor-not-allowed'
                         : 'hover:bg-stone-50 hover:shadow-md'
                     }`}
                   >
-                    <div className={`w-16 h-16 rounded-full shadow-inner mb-3 transition-transform group-hover:scale-110 ${flavor.color}`} />
-                    <span className="text-xs font-bold text-stone-700 uppercase tracking-wider">{flavor.name}</span>
-                    <div className="absolute top-2 right-2 w-6 h-6 bg-white rounded-full shadow-sm flex items-center justify-center text-[10px] font-bold text-stone-400 border border-stone-100">
+                    <div className={`w-12 h-12 rounded-full shadow-inner mb-2 transition-transform group-hover:scale-110 ${flavor.color}`} />
+                    <span className="text-[10px] font-bold text-stone-700 uppercase tracking-wider text-center leading-tight">{flavor.name}</span>
+                    <div className="absolute top-1 right-1 w-5 h-5 bg-white rounded-full shadow-sm flex items-center justify-center text-[9px] font-bold text-stone-400 border border-stone-100">
                       {flavor.letter}
                     </div>
                   </button>
@@ -166,12 +204,12 @@ const IceCreamLab: React.FC = () => {
             <div className="flex-1 bg-white p-8 rounded-[32px] shadow-sm border border-stone-200 flex flex-col items-center justify-center relative overflow-hidden">
               <div className="absolute top-8 left-8 flex items-center space-x-2 text-stone-400">
                 <Info size={16} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Bygg din glass</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Bygg din glass ({currentCone.length}/{scoopCount})</span>
               </div>
 
-              <div className="relative w-48 h-80 flex flex-col items-center justify-end pb-12">
+              <div className="relative w-48 h-96 flex flex-col items-center justify-end pb-12">
                 {/* Cone */}
-                <div className="w-32 h-40 bg-orange-200 rounded-b-full relative overflow-hidden border-x-4 border-b-4 border-orange-300 shadow-inner">
+                <div className="w-32 h-40 bg-orange-200 rounded-b-full relative overflow-hidden border-x-4 border-b-4 border-orange-300 shadow-inner z-0">
                   <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 11px), repeating-linear-gradient(-45deg, transparent, transparent 10px, #000 10px, #000 11px)' }} />
                 </div>
 
@@ -184,7 +222,8 @@ const IceCreamLab: React.FC = () => {
                         initial={{ y: -100, opacity: 0, scale: 0.5 }}
                         animate={{ y: 0, opacity: 1, scale: 1 }}
                         exit={{ y: 50, opacity: 0, scale: 0.5 }}
-                        className={`w-36 h-36 rounded-full shadow-lg -mb-12 relative z-10 ${flavor.color}`}
+                        className={`w-36 h-36 rounded-full shadow-lg -mb-16 relative ${flavor.color}`}
+                        style={{ zIndex: index + 1 }}
                       />
                     ))}
                   </AnimatePresence>
@@ -201,7 +240,7 @@ const IceCreamLab: React.FC = () => {
                 </button>
                 <button
                   onClick={saveCombination}
-                  disabled={currentCone.length < 2}
+                  disabled={currentCone.length < scoopCount}
                   className="px-8 py-4 bg-pink-500 text-white rounded-2xl font-bold uppercase tracking-widest flex items-center space-x-3 shadow-lg shadow-pink-500/20 hover:bg-pink-600 disabled:opacity-30 transition-all"
                 >
                   <Check size={20} />
@@ -240,7 +279,7 @@ const IceCreamLab: React.FC = () => {
                         <div className="flex flex-wrap gap-2">
                           {savedCombinations.map(c => (
                             <span key={c.id} className="font-mono text-white text-sm bg-stone-700 px-2 py-1 rounded">
-                              {c.flavors[0].letter}{c.flavors[1].letter}
+                              {c.flavors.map(f => f.letter).join('')}
                             </span>
                           ))}
                         </div>
@@ -248,7 +287,10 @@ const IceCreamLab: React.FC = () => {
                       <div className="p-4 bg-stone-800 rounded-2xl border border-stone-700">
                         <h4 className="text-[10px] font-bold text-emerald-400 uppercase mb-2">Logiskt</h4>
                         <p className="text-[11px] text-stone-400 leading-relaxed italic">
-                          "Om vi har 4 smaker och väljer 2 olika utan ordning, får vi 3 + 2 + 1 = 6 sätt."
+                          {scoopCount === 2 && !allowSameFlavor && !orderMatters && `Med ${flavorCount} smaker och 2 olika kulor finns det ${flavorCount * (flavorCount - 1) / 2} kombinationer.`}
+                          {scoopCount === 2 && allowSameFlavor && !orderMatters && `Med ${flavorCount} smaker och 2 kulor (samma tillåtet) finns det ${flavorCount * (flavorCount + 1) / 2} kombinationer.`}
+                          {scoopCount > 2 && "När antalet kulor ökar blir det svårare att räkna. Kan du hitta ett system?"}
+                          {orderMatters && " Eftersom ordningen spelar roll finns det fler sätt!"}
                         </p>
                       </div>
                     </motion.div>
@@ -268,8 +310,8 @@ const IceCreamLab: React.FC = () => {
                               <div key={i} className={`w-8 h-8 rounded-full border-2 border-stone-800 shadow-sm ${f.color}`} />
                             ))}
                           </div>
-                          <span className="text-xs font-bold text-stone-300 uppercase tracking-wider">
-                            {combo.flavors[0].name} + {combo.flavors[1].name}
+                          <span className="text-[10px] font-bold text-stone-300 uppercase tracking-wider truncate max-w-[120px]">
+                            {combo.flavors.map(f => f.name).join(' + ')}
                           </span>
                         </div>
                         <button
@@ -301,7 +343,10 @@ const IceCreamLab: React.FC = () => {
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold text-stone-900 uppercase tracking-widest">Matematisk utmaning</h4>
                   <p className="text-[11px] text-stone-500 leading-relaxed">
-                    Kim ska köpa lösglass. Det finns fyra smaker. Kim vill ha två kulor. På hur många sätt kan Kim välja?
+                    Det finns {flavorCount} smaker. Du ska välja {scoopCount} kulor. 
+                    {allowSameFlavor ? " Du får välja samma smak flera gånger." : " Du måste välja olika smaker."}
+                    {orderMatters ? " Ordningen på kulorna spelar roll." : " Ordningen spelar ingen roll."}
+                    Hur många sätt finns det?
                   </p>
                 </div>
               </div>

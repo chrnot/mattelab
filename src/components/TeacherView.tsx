@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Eye, EyeOff, Info, HelpCircle } from 'lucide-react';
+import { EyeOff, Info, HelpCircle } from 'lucide-react';
 
 import { Lab } from '../types';
 
 interface TeacherViewProps {
   currentLab: Lab;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-const TeacherView: React.FC<TeacherViewProps> = ({ currentLab }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
+const TeacherView: React.FC<TeacherViewProps> = ({ currentLab, isOpen, onToggle }) => {
   if (currentLab === Lab.HOME) return null;
 
   const getContent = () => {
@@ -152,6 +152,43 @@ const TeacherView: React.FC<TeacherViewProps> = ({ currentLab }) => {
           ),
           footer: 'KLAG: Konkret, Logiskt, Algebraiskt, Grafiskt'
         };
+      case Lab.RICH_PROBLEM_LAB:
+        return {
+          title: 'Det Rika Problemlabbet',
+          body: (
+            <>
+              <p>
+                Här fokuserar vi på <span className="font-bold text-stone-800">rika problem</span> som leder från konkreta experiment till algebraisk generalisering.
+              </p>
+              <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <h4 className="font-bold text-amber-900 uppercase text-[10px] tracking-widest mb-2">Strategi-Galleriet:</h4>
+                <div className="space-y-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm border border-amber-200">
+                    <p className="text-[11px] font-bold text-stone-800">Elev A (Konkret):</p>
+                    <p className="text-[10px] text-stone-600">Bygger mönstret med plattor och räknar en och en.</p>
+                  </div>
+                  <div className="p-2 bg-white rounded-lg shadow-sm border border-amber-200">
+                    <p className="text-[11px] font-bold text-stone-800">Elev B (Logisk/Tabell):</p>
+                    <p className="text-[10px] text-stone-600">Ser att det ökar med 2 för varje steg: "Det är 2n + 6".</p>
+                  </div>
+                  <div className="p-2 bg-white rounded-lg shadow-sm border border-amber-200">
+                    <p className="text-[11px] font-bold text-stone-800">Elev C (Algebraisk):</p>
+                    <p className="text-[10px] text-stone-600">Formulerar regeln direkt: y = 2x + 6.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Hur ser vi "2:an" i den konkreta sandlådan?</li>
+                  <li>Varför börjar tabellen på 8 plattor?</li>
+                  <li>Kan vi använda grafen för att förutsäga nästa steg?</li>
+                </ul>
+              </div>
+            </>
+          ),
+          footer: 'Didaktik: Från konkret till abstrakt'
+        };
       default:
         return { title: '', body: <></>, footer: '' };
     }
@@ -160,46 +197,62 @@ const TeacherView: React.FC<TeacherViewProps> = ({ currentLab }) => {
   const content = getContent();
 
   return (
-    <div className="fixed bottom-8 right-8 z-50">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`p-4 rounded-full shadow-lg transition-all flex items-center space-x-2 ${
-          isOpen ? 'bg-stone-800 text-white' : 'bg-white text-stone-800 border border-stone-200'
-        }`}
-      >
-        {isOpen ? <EyeOff size={24} /> : <Eye size={24} />}
-        <span className="font-bold text-sm uppercase tracking-widest">Lärarvy</span>
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="absolute bottom-20 right-0 w-96 p-8 bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onToggle}
+            className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm z-40"
+          />
+          
+          {/* Drawer */}
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="fixed top-0 right-0 bottom-0 w-96 bg-white shadow-2xl z-50 flex flex-col border-l border-stone-200"
           >
-            <div className="flex flex-col space-y-6">
-              <div className="flex items-center space-x-3 text-amber-600">
-                <Info size={24} />
-                <h3 className="text-xl font-serif font-medium italic">{content.title}</h3>
+            <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center space-x-3 text-amber-600">
+                  <Info size={24} />
+                  <h3 className="text-xl font-serif font-medium italic">{content.title}</h3>
+                </div>
+                <button
+                  onClick={onToggle}
+                  className="p-2 hover:bg-stone-100 rounded-full text-stone-400 transition-colors"
+                >
+                  <EyeOff size={20} />
+                </button>
               </div>
 
-              <div className="space-y-4 text-stone-600 text-sm leading-relaxed">
+              <div className="space-y-6 text-stone-600 text-sm leading-relaxed">
                 {content.body}
               </div>
 
-              <div className="pt-4 border-t border-stone-100">
+              <div className="mt-12 pt-6 border-t border-stone-100">
                 <div className="flex items-center space-x-2 text-stone-400">
                   <HelpCircle size={16} />
-                  <span className="text-xs uppercase tracking-widest">{content.footer}</span>
+                  <span className="text-xs uppercase tracking-widest font-bold">{content.footer}</span>
                 </div>
               </div>
             </div>
+            
+            <div className="p-8 bg-stone-50 border-t border-stone-100">
+              <p className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mb-2">Lärarvy</p>
+              <p className="text-[11px] text-stone-500 italic">
+                Denna vy är till för läraren och innehåller didaktiska tips och facit.
+              </p>
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 
