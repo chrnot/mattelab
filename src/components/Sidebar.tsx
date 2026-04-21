@@ -33,13 +33,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   isTeacherViewOpen, 
   onToggleTeacherView 
 }) => {
-  const [isExpanded, setIsExpanded] = useState(currentLab !== Lab.HOME);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    if (currentLab === Lab.HOME) {
-      setIsExpanded(false);
-    } else {
+    if (currentLab !== Lab.HOME) {
       setIsExpanded(true);
       // Automatically open the category containing the current lab
       const category = categories.find(cat => cat.labs.some(lab => lab.id === currentLab));
