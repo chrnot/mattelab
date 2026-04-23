@@ -189,6 +189,36 @@ const TeacherView: React.FC<TeacherViewProps> = ({ currentLab, isOpen, onToggle 
           ),
           footer: 'Didaktik: Från konkret till abstrakt'
         };
+      case Lab.CONNECTION_BUILDER:
+        return {
+          title: 'Sambands-Byggaren',
+          body: (
+            <>
+              <p>
+                Denna widget visualiserar hur <span className="font-bold text-stone-800">geometri</span> och <span className="font-bold text-stone-800">algebra</span> hänger ihop genom mönsterspaning (vinkelsumma i polygoner).
+              </p>
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 italic">
+                "Varje gång man lägger till en sida i en polygon, läggs en ny 180°-triangel till i vinkelsumman."
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Didaktiska poänger:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><span className="font-bold">n - 2</span> representerar antalet trianglar man kan dela in polygonen i från ett hörn.</li>
+                  <li>Övergången från tabell (aritmetik) till formel (algebra) är ett kritiskt steg för generalisering.</li>
+                </ul>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Varför börjar vi på n=3? Vad händer vid n=2?</li>
+                  <li>Hur ser vi kopplingen mellan formeln S = (n-2) * 180 och animationen med trianglar?</li>
+                  <li>Hur kan vi använda formeln för att räkna ut antalet hörn om vi vet vinkelsumman?</li>
+                </ul>
+              </div>
+            </>
+          ),
+          footer: 'Formel: S = (n-2) * 180°'
+        };
       default:
         return { title: '', body: <></>, footer: '' };
     }

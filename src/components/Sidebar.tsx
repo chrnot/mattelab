@@ -16,7 +16,8 @@ import {
   Lightbulb,
   IceCream,
   Eye,
-  EyeOff
+  EyeOff,
+  Sigma
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -74,7 +75,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       id: 'alg',
       label: 'Algebra',
       icon: Calculator,
-      labs: []
+      labs: [
+        { id: Lab.CONNECTION_BUILDER, label: 'Sambands-Byggaren', icon: Sigma }
+      ]
     },
     {
       id: 'geo',

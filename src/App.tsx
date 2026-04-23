@@ -9,6 +9,7 @@ import DecimalCalculatorLab from './components/DecimalCalculatorLab';
 import SmartCalculatorLab from './components/SmartCalculatorLab';
 import IceCreamLab from './components/IceCreamLab';
 import RichProblemLab from './components/RichProblemLab';
+import ConnectionBuilder from './components/ConnectionBuilder';
 import TeacherView from './components/TeacherView';
 
 const App: React.FC = () => {
@@ -39,8 +40,10 @@ const App: React.FC = () => {
           <SmartCalculatorLab />
         ) : currentLab === Lab.ICE_CREAM ? (
           <IceCreamLab />
-        ) : (
+        ) : currentLab === Lab.RICH_PROBLEM_LAB ? (
           <RichProblemLab />
+        ) : (
+          <ConnectionBuilder />
         )}
         
         <TeacherView currentLab={currentLab} isOpen={isTeacherViewOpen} onToggle={() => setIsTeacherViewOpen(!isTeacherViewOpen)} />
