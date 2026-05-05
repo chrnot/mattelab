@@ -12,8 +12,11 @@ import {
   Hash,
   Calculator,
   BarChart,
+  BarChart2,
   TrendingUp,
   Lightbulb,
+  Search,
+  ShieldCheck,
   IceCream,
   Eye,
   EyeOff,
@@ -91,7 +94,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       id: 'stat',
       label: 'Sannolikhet och statistik',
       icon: BarChart,
-      labs: []
+      labs: [
+        { id: Lab.STATISTICS_LAB, label: 'Statistik-Labbet', icon: BarChart2 },
+        { id: Lab.STATISTICS_DETECTIVE, label: 'Statistik-Detektiven', icon: Search },
+        { id: Lab.STATISTICS_EXAMINER, label: 'Statistik-Granskaren', icon: ShieldCheck }
+      ]
     },
     {
       id: 'samband',

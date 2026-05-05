@@ -219,6 +219,106 @@ const TeacherView: React.FC<TeacherViewProps> = ({ currentLab, isOpen, onToggle 
           ),
           footer: 'Formel: S = (n-2) * 180°'
         };
+      case Lab.STATISTICS_LAB:
+        return {
+          title: 'Statistik-Labbet',
+          body: (
+            <>
+              <p>
+                Detta labb syftar till att göra abstrakt statistik <span className="font-bold text-stone-800">konkret</span> och <span className="font-bold text-stone-800">begriplig</span> genom att direkt koppla rådata till dess visuella representation.
+              </p>
+              <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                <h4 className="font-bold text-emerald-900 uppercase text-[10px] tracking-widest mb-2">Didaktiska begrepp:</h4>
+                <div className="space-y-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm border border-emerald-100">
+                    <p className="text-[11px] font-bold text-stone-800">Lägesmått (Centrallinje):</p>
+                    <p className="text-[10px] text-stone-600">Medelvärdet visualiseras som den nivå där alla staplar "jämnas ut". Medianen visar ordning och mitten.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Hur förändras medelvärdet om vi lägger till fem äpplen till?</li>
+                  <li>Vilket diagram (Stapel eller Cirkel) är bäst för att se vilken frukt som är mest populär?</li>
+                </ul>
+              </div>
+            </>
+          ),
+          footer: 'Didaktik: Från rådata till analys'
+        };
+      case Lab.STATISTICS_DETECTIVE:
+        return {
+          title: 'Statistik-Detektiven',
+          body: (
+            <>
+              <p>
+                Detta labb fokuserar på <span className="font-bold text-stone-800">kritiskt tänkande</span>. Genom att låta eleverna agera "nyhetsredaktörer" får de prova på att vinkla sanningen, vilket ger dem verktyg att genomskåda vilseledande statistik i verkligheten.
+              </p>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                  <h4 className="font-bold text-emerald-900 uppercase text-[10px] tracking-widest mb-2">Tre svårighetsnivåer:</h4>
+                  <div className="space-y-2">
+                    <div className="p-2 bg-white rounded-lg shadow-sm">
+                      <p className="text-[11px] font-black text-stone-800 uppercase">1. Nybörjare:</p>
+                      <p className="text-[10px] text-stone-600">Introducerar <span className="font-bold">Y-axelns startvärde</span>. Eleverna upptäcker hur man kan få små skillnader att se stora ut genom att "klippa" axeln.</p>
+                    </div>
+                    <div className="p-2 bg-white rounded-lg shadow-sm">
+                      <p className="text-[11px] font-black text-stone-800 uppercase">2. Erfaren:</p>
+                      <p className="text-[10px] text-stone-600">Introducerar <span className="font-bold">urvalsstorlek</span>. Visar hur man genom att bara fråga ett fåtal personer kan få ett resultat som inte stämmer med helheten.</p>
+                    </div>
+                    <div className="p-2 bg-white rounded-lg shadow-sm">
+                      <p className="text-[11px] font-black text-stone-800 uppercase">3. Mästare:</p>
+                      <p className="text-[10px] text-stone-600">Full frihet med <span className="font-bold">rubriker</span> och kombination av alla verktyg för att skapa en hel vinklad nyhetssida.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-bold text-stone-800 uppercase text-xs tracking-widest">Diskussionsunderlag:</h4>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Varför ser det ut som att alla hatar maten när vi klipper y-axeln?</li>
+                    <li>Kan vi lita på en undersökning där bara 5 av 100 personer har svarat?</li>
+                    <li>Vilken rubrik passar bäst till det diagram du har skapat? Är den sann?</li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          ),
+          footer: 'Mål: Vaccin mot vilseledande statistik'
+        };
+      case Lab.STATISTICS_EXAMINER:
+        return {
+          title: 'Statistik-Granskaren',
+          body: (
+            <>
+              <p>
+                Detta verktyg är designat för <span className="font-bold text-stone-800">högstadiet (åk 8–9)</span> och fokuserar på den kritiska aspekten av statistik enligt Lgr22.
+              </p>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                  <h4 className="font-bold text-indigo-900 uppercase text-[10px] tracking-widest mb-2">Didaktiska kärnpunkter:</h4>
+                  <ul className="space-y-2 text-[10px] text-indigo-800">
+                    <li className="flex gap-2">
+                      <span className="font-black">KLAG-stöd:</span> 
+                      Växla mellan Grafisk, Algebraisk, Logisk och Konkret representation för att bygga djupförståelse.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Urvals-matematik:</span> 
+                      Simulera hur ett urval på n=3 vs n=1000 dramatiskt påverkar tillförlitligheten (konfidens).
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Skal-kritik:</span> 
+                      Träna eleverna i att upptäcka "Truncated Y-axis" (klippta axlar).
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          ),
+          footer: 'Progression: Kritisk granskning av omvärlden'
+        };
       default:
         return { title: '', body: <></>, footer: '' };
     }
