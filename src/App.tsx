@@ -13,7 +13,10 @@ import ConnectionBuilder from './components/ConnectionBuilder';
 import StatisticsLab from './components/StatisticsLab';
 import StatisticsDetective from './components/StatisticsDetective';
 import StatisticsExaminer from './components/StatisticsExaminer';
+import TowerOfHanoi from './components/TowerOfHanoi';
+import Architect from './components/Architect';
 import TeacherView from './components/TeacherView';
+import PatternTowers from './components/PatternTowers';
 
 const App: React.FC = () => {
   const [currentLab, setCurrentLab] = useState<Lab>(Lab.HOME);
@@ -33,6 +36,9 @@ const App: React.FC = () => {
       case Lab.STATISTICS_LAB: return <StatisticsLab />;
       case Lab.STATISTICS_DETECTIVE: return <StatisticsDetective />;
       case Lab.STATISTICS_EXAMINER: return <StatisticsExaminer />;
+      case Lab.TOWER_OF_HANOI: return <TowerOfHanoi />;
+      case Lab.ARCHITECT: return <Architect />;
+      case Lab.PATTERN_TOWERS: return <PatternTowers />;
       default: return <Home />;
     }
   };

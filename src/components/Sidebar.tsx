@@ -20,15 +20,32 @@ import {
   IceCream,
   Eye,
   EyeOff,
-  Sigma
+  Sigma,
+  History as HistoryIcon,
+  Boxes,
+  Layers
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { LucideIcon } from 'lucide-react';
 
 interface SidebarProps {
   currentLab: Lab;
   onSelectLab: (lab: Lab) => void;
   isTeacherViewOpen: boolean;
   onToggleTeacherView: () => void;
+}
+
+interface LabItem {
+  id: Lab;
+  label: string;
+  icon: LucideIcon;
+}
+
+interface Category {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  labs: LabItem[];
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
@@ -64,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
-  const categories = [
+  const categories: Category[] = [
     {
       id: 'tal',
       label: 'Taluppfattning',
@@ -79,7 +96,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Algebra',
       icon: Calculator,
       labs: [
-        { id: Lab.CONNECTION_BUILDER, label: 'Sambands-Byggaren', icon: Sigma }
+        { id: Lab.CONNECTION_BUILDER, label: 'Sambands-Byggaren', icon: Sigma },
+        { id: Lab.PATTERN_TOWERS, label: 'Mönster-Tornen', icon: Layers }
       ]
     },
     {
@@ -87,7 +105,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Geometri',
       icon: Shapes,
       labs: [
-        { id: Lab.GEOBOARD, label: 'Geobräde', icon: Shapes }
+        { id: Lab.GEOBOARD, label: 'Geobräde', icon: Shapes },
+        { id: Lab.ARCHITECT, label: 'Arkitekten', icon: Boxes }
       ]
     },
     {
@@ -105,7 +124,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Samband och förändring',
       icon: TrendingUp,
       labs: [
-        { id: Lab.FROG_JUMP, label: 'Grodhopp', icon: CircleDot }
+        { id: Lab.FROG_JUMP, label: 'Grodhopp', icon: CircleDot },
+        { id: Lab.TOWER_OF_HANOI, label: 'Tornet i Hanoi', icon: HistoryIcon }
       ]
     },
     {

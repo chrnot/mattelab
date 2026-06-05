@@ -319,6 +319,99 @@ const TeacherView: React.FC<TeacherViewProps> = ({ currentLab, isOpen, onToggle 
           ),
           footer: 'Progression: Kritisk granskning av omvärlden'
         };
+      case Lab.TOWER_OF_HANOI:
+        return {
+          title: 'Tornet i Hanoi',
+          body: (
+            <>
+              <p>
+                Detta är ett klassiskt problem för <span className="font-bold text-stone-800">högstadiet (åk 8–9)</span> för att arbeta med algebra, mönster och funktioner.
+              </p>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                  <h4 className="font-bold text-amber-900 uppercase text-[10px] tracking-widest mb-2">Didaktiska kärnpunkter:</h4>
+                  <ul className="space-y-2 text-[10px] text-amber-800">
+                    <li className="flex gap-2">
+                      <span className="font-black">Från konkret till abstrakt:</span> 
+                      Eleverna går från att handgripligen flytta skivor till att upptäcka formeln $f(n) = 2^n - 1$.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Exponentiell ökning:</span> 
+                      Visualisera hur svårighetsgraden dubbleras för varje ny skiva, vilket kopplar till funktionsbegreppet.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Rekursion:</span> 
+                      Diskutera hur lösningen för $n$ skivor bygger på lösningen för $n-1$ skivor.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          ),
+          footer: 'Mål: Upptäcka generella matematiska samband'
+        };
+      case Lab.ARCHITECT:
+        return {
+          title: 'Arkitekten (3D-Geometri)',
+          body: (
+            <>
+              <p>
+                Detta verktyg stöder <span className="font-bold text-stone-800">åk 4–9</span> inom områdena tredimensionell visualisering, volym, begränsningsarea samt 2D- och 3D-projektioner.
+              </p>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                  <h4 className="font-bold text-amber-900 uppercase text-[10px] tracking-widest mb-2">Didaktisk progression & tips:</h4>
+                  <ul className="space-y-2 text-[10px] text-amber-800">
+                    <li className="flex gap-2">
+                      <span className="font-black">Från 2D-vyn till 3D:</span> 
+                      I Läge A bygger eleverna efter tre bestämda ortogonalprojektioner. Det belyser en central matematisk sanning: en 3D-form kan rymma dolda ("hemliga") klossar som inte syns i någon projektionsvy.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Begränsningsarea vs Volym:</span> 
+                      I Läge B utforskar eleverna förhållandet mellan begränsningsarea och volym. De kan klicka fram en interaktiv märkning av begränsningsytor (gula) och klicka ytorna för att räkna dem strukturerat i 3D under rotering.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Volym-isolerande särkoppling:</span> 
+                      Genom att använda "Spräng figuren" separeras centikuberna mjukt i rummet. Detta visar tydligt att volymen stannar på samma antal kuber, medan begränsningsarean dramatiskt ökar när de dolda klossarnas rörande sidor exponeras.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          ),
+          footer: 'Progression: Från rumsförståelse till formelbaserad mätning'
+        };
+      case Lab.PATTERN_TOWERS:
+        return {
+          title: 'Mönster-Tornen (Algebra & Funktionslära)',
+          body: (
+            <>
+              <p>
+                Detta verktyg stöder <span className="font-bold text-stone-800">åk 4–9</span> för att utveckla förståelse för aritmetiska talföljder, mönsterigenkänning och algebraisk generalisering.
+              </p>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                  <h4 className="font-bold text-amber-900 uppercase text-[10px] tracking-widest mb-2">Didaktiska kärnpunkter & Progression:</h4>
+                  <ul className="space-y-2 text-[10px] text-amber-800">
+                    <li className="flex gap-2">
+                      <span className="font-black">Fas 1: Efterapa mönstret concretely:</span> 
+                      Att bygga de tre första stegen för hand etablerar kopplingen mellan figurnummer och antal kuber, vilket ger en solid bild av mönstrets tillväxthastighet.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Fas 2: Upptäck mönsterfärgen:</span> 
+                      Denna djupt pedagogiska visualisering särkopplar konstanten (blå botten) från den rörliga förändringsfaktorn (gula staplar). Eleverna ser fysiskt varför formeln skrivs $M \cdot n + C$.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Fas 3: Det algebraiska språnget:</span> 
+                      När bygghallen spärras tvingas eleven slita sig loss från konkret räknande för att istället använda mönstret och värdetabellen för att förutsäga höga torn och slutligen formulera den allmänna formeln.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          ),
+          footer: 'Mål: Etablera algebraiskt tänkande genom konkreta digitala laborationsverktyg'
+        };
       default:
         return { title: '', body: <></>, footer: '' };
     }
