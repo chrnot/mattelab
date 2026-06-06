@@ -17,6 +17,7 @@ import TowerOfHanoi from './components/TowerOfHanoi';
 import Architect from './components/Architect';
 import TeacherView from './components/TeacherView';
 import PatternTowers from './components/PatternTowers';
+import SnottranLab from './components/SnottranLab';
 
 const App: React.FC = () => {
   const [currentLab, setCurrentLab] = useState<Lab>(Lab.HOME);
@@ -39,6 +40,7 @@ const App: React.FC = () => {
       case Lab.TOWER_OF_HANOI: return <TowerOfHanoi />;
       case Lab.ARCHITECT: return <Architect />;
       case Lab.PATTERN_TOWERS: return <PatternTowers />;
+      case Lab.SNOTTRAN: return <SnottranLab />;
       default: return <Home />;
     }
   };

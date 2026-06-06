@@ -412,6 +412,37 @@ const TeacherView: React.FC<TeacherViewProps> = ({ currentLab, isOpen, onToggle 
           ),
           footer: 'Mål: Etablera algebraiskt tänkande genom konkreta digitala laborationsverktyg'
         };
+      case Lab.SNOTTRAN:
+        return {
+          title: 'Den Digitala Snottran (Färdighet & Självrättning)',
+          body: (
+            <>
+              <p>
+                Detta verktyg är en digital och taktil tolkning av det klassiska läromedlet <span className="font-bold text-stone-800">Snottran</span> från NCM (Nationellt Centrum för Matematikutbildning).
+              </p>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="p-4 bg-rose-50 rounded-xl border border-rose-100">
+                  <h4 className="font-bold text-rose-900 uppercase text-[10px] tracking-widest mb-2 font-mono">Didaktisk Struktur & Användning:</h4>
+                  <ul className="space-y-2.5 text-[10px] text-rose-950">
+                    <li className="flex gap-2">
+                      <span className="font-black">Fas 1: Laborera (Utmaningen):</span> 
+                      Eleven löser snottran uppifrån och ned genom att spänna den digitala tråden. Inget störande rött kryss eller felmeddelande stoppar flödet – eleven tillåts göra fel och fortsätta hela vägen ner, precis som med fysiskt garn.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Fas 2: Självrättning (Vänd-vänden):</span> 
+                      Vid färdig snörning används den inbyggda 3D-flippen. På baksidan blir de korrekta linjerna gröna om de ligger i linje med facitets färdiga rännor. Eventuella felaktiga kopplingar avslöjas genom asymmetri.
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-black">Flexibel anpassning:</span> 
+                      Snottran är helt datadriven. Läraren eller eleven kan enkelt byta till önskad multiplikationstabell (2:ans till 12:ans), träna tiokamrater (addition), division med 3, eller para ihop geometriska former och dess namn.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </>
+          ),
+          footer: 'Didaktiskt Syfte: Taktilt fäste och direkt visuell återkoppling'
+        };
       default:
         return { title: '', body: <></>, footer: '' };
     }

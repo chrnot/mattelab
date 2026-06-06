@@ -23,7 +23,8 @@ import {
   Sigma,
   History as HistoryIcon,
   Boxes,
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LucideIcon } from 'lucide-react';
@@ -88,7 +89,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Hash,
       labs: [
         { id: Lab.DECIMAL_CALCULATOR, label: 'Decimaltal på räknaren', icon: Calculator },
-        { id: Lab.SMART_CALCULATOR, label: 'Den Smarta Räknaren', icon: Lightbulb }
+        { id: Lab.SMART_CALCULATOR, label: 'Den Smarta Räknaren', icon: Lightbulb },
+        { id: Lab.SNOTTRAN, label: 'Den Digitala Snottran', icon: Sparkles }
       ]
     },
     {
