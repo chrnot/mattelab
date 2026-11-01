@@ -11,7 +11,19 @@ import {
   Award,
   CircleDot,
   Calculator,
-  Grid
+  Grid,
+  ChevronDown,
+  ChevronUp,
+  History,
+  CheckCircle2,
+  XCircle,
+  Trash2,
+  Clock,
+  ArrowRight,
+  Filter,
+  Check,
+  X,
+  ListFilter
 } from 'lucide-react';
 
 interface LeftItem {
@@ -40,6 +52,28 @@ interface SnottranExercise {
 // Preset types
 type SnottranPresetId = 'multiplication' | 'tiokamrater' | 'geometri' | 'division';
 
+// Session choice log item
+export interface SnottranChoiceLog {
+  id: string;
+  timestamp: Date;
+  timeString: string;
+  exerciseId: SnottranPresetId;
+  exerciseName: string;
+  operationLabel: string;
+  difficulty: 'nybörjare' | 'expert';
+  stepNumber: number;
+  leftLabel: string;
+  leftValue: any;
+  shapeType?: string;
+  chosenRightLabel: string;
+  chosenRightValue: any;
+  correctRightLabel: string;
+  correctRightValue: any;
+  isCorrect: boolean;
+  explanation: string;
+  wasUndone?: boolean;
+}
+
 const SnottranLab: React.FC = () => {
   const [presetId, setPresetId] = useState<SnottranPresetId>('multiplication');
   const [multiplicand, setMultiplicand] = useState<number>(6); // Default 6's table
@@ -51,11 +85,20 @@ const SnottranLab: React.FC = () => {
   const [activeStep, setActiveStep] = useState<number>(0); // Current left index to drag from
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [showGuideLines, setShowGuideLines] = useState<boolean>(true);
+  const [difficulty, setDifficulty] = useState<'nybörjare' | 'expert'>('expert');
+  const [isDidacticOpen, setIsDidacticOpen] = useState<boolean>(false);
+
+  // Ongoing session log states
+  const [sessionLogs, setSessionLogs] = useState<SnottranChoiceLog[]>([]);
+  const [logFilterStatus, setLogFilterStatus] = useState<'alla' | 'korrekt' | 'fel' | 'angrade'>('alla');
+  const [logFilterExercise, setLogFilterExercise] = useState<string>('alla');
+  const [isLogPanelOpen, setIsLogPanelOpen] = useState<boolean>(true);
 
   // Drag states
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [pointerPos, setPointerPos] = useState({ x: 0, y: 0 });
   const [hoveredRightIdx, setHoveredRightIdx] = useState<number | null>(null);
+  const [hoveredLeftIdx, setHoveredLeftIdx] = useState<number | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -309,6 +352,13 @@ const SnottranLab: React.FC = () => {
     return exercise.rightItems.findIndex(r => exercise.checkMatch(leftItem.value, r.value));
   };
 
+  // Retrieve correct left notch index for a given right notch index i
+  const getCorrectLeftIdx = (rightIdx: number): number => {
+    if (!exercise) return -1;
+    const rightItem = exercise.rightItems[rightIdx];
+    return exercise.leftItems.findIndex(l => exercise.checkMatch(l.value, rightItem.value));
+  };
+
   // Handle pointer coordinate extraction
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (isFlipped || !exercise) return;
@@ -388,6 +438,71 @@ const SnottranLab: React.FC = () => {
       // Save in history for undo stack
       setHistory(prev => [...prev, newConnections]);
 
+      // Record choice in the ongoing session log
+      if (exercise && activeStep < N) {
+        const leftItem = exercise.leftItems[activeStep];
+        const chosenRightItem = exercise.rightItems[closestIdx];
+        const correctRightIdx = getCorrectRightIdx(activeStep);
+        const correctRightItem = correctRightIdx !== -1 ? exercise.rightItems[correctRightIdx] : null;
+        const isCorrect = closestIdx === correctRightIdx;
+
+        let leftText = '';
+        if (typeof leftItem.label === 'string') {
+          leftText = leftItem.label;
+        } else if (leftItem.shapeType) {
+          leftText = leftItem.shapeType.charAt(0).toUpperCase() + leftItem.shapeType.slice(1);
+        } else {
+          leftText = 'Figur';
+        }
+
+        let explanation = '';
+        if (presetId === 'multiplication') {
+          const correctVal = leftItem.value * multiplicand;
+          explanation = isCorrect
+            ? `${leftItem.value} × ${multiplicand} = ${chosenRightItem.value}`
+            : `${leftItem.value} × ${multiplicand} = ${correctVal} (du valde ${chosenRightItem.value})`;
+        } else if (presetId === 'tiokamrater') {
+          const correctVal = 10 - leftItem.value;
+          explanation = isCorrect
+            ? `${leftItem.value} + ${chosenRightItem.value} = 10`
+            : `${leftItem.value} + ${chosenRightItem.value} = ${Number(leftItem.value) + Number(chosenRightItem.value)} (tiokamrat är ${correctVal})`;
+        } else if (presetId === 'division') {
+          const correctVal = leftItem.value / 3;
+          explanation = isCorrect
+            ? `${leftItem.value} ÷ 3 = ${chosenRightItem.value}`
+            : `${leftItem.value} ÷ 3 = ${correctVal} (du valde ${chosenRightItem.value})`;
+        } else if (presetId === 'geometri') {
+          explanation = isCorrect
+            ? `Figuren är en ${chosenRightItem.label}`
+            : `Figuren är en ${leftText} (du valde ${chosenRightItem.label})`;
+        } else {
+          explanation = isCorrect ? 'Rätt parning' : 'Fel parning';
+        }
+
+        const newLogEntry: SnottranChoiceLog = {
+          id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          timestamp: new Date(),
+          timeString: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          exerciseId: presetId,
+          exerciseName: exercise.name,
+          operationLabel: exercise.operationLabel,
+          difficulty,
+          stepNumber: activeStep + 1,
+          leftLabel: leftText,
+          leftValue: leftItem.value,
+          shapeType: leftItem.shapeType,
+          chosenRightLabel: chosenRightItem.label,
+          chosenRightValue: chosenRightItem.value,
+          correctRightLabel: correctRightItem ? correctRightItem.label : '',
+          correctRightValue: correctRightItem ? correctRightItem.value : null,
+          isCorrect,
+          explanation,
+          wasUndone: false
+        };
+
+        setSessionLogs(prev => [newLogEntry, ...prev]);
+      }
+
       // Move to next step
       setActiveStep(prev => prev + 1);
     }
@@ -403,6 +518,17 @@ const SnottranLab: React.FC = () => {
       setHistory(newHistory);
       setConnections(newHistory[newHistory.length - 1]);
       setActiveStep(prev => prev - 1);
+
+      // Mark the most recent non-undone choice for this exercise as undone
+      setSessionLogs(prev => {
+        const targetIdx = prev.findIndex(item => !item.wasUndone && item.exerciseId === presetId);
+        if (targetIdx !== -1) {
+          const updated = [...prev];
+          updated[targetIdx] = { ...updated[targetIdx], wasUndone: true };
+          return updated;
+        }
+        return prev;
+      });
     }
   };
 
@@ -413,6 +539,35 @@ const SnottranLab: React.FC = () => {
     setActiveStep(0);
     setIsFlipped(false);
   };
+
+  // Clear session choice history
+  const handleClearLogs = () => {
+    setSessionLogs([]);
+  };
+
+  // Compute session log metrics
+  const logStats = useMemo(() => {
+    const activeEntries = sessionLogs.filter(l => !l.wasUndone);
+    const total = sessionLogs.length;
+    const activeCount = activeEntries.length;
+    const correctCount = activeEntries.filter(l => l.isCorrect).length;
+    const incorrectCount = activeEntries.filter(l => !l.isCorrect).length;
+    const undoneCount = sessionLogs.filter(l => l.wasUndone).length;
+    const accuracy = activeCount > 0 ? Math.round((correctCount / activeCount) * 100) : 0;
+
+    return { total, activeCount, correctCount, incorrectCount, undoneCount, accuracy };
+  }, [sessionLogs]);
+
+  // Filtered session logs for view
+  const filteredLogs = useMemo(() => {
+    return sessionLogs.filter(entry => {
+      if (logFilterStatus === 'korrekt' && (!entry.isCorrect || entry.wasUndone)) return false;
+      if (logFilterStatus === 'fel' && (entry.isCorrect || entry.wasUndone)) return false;
+      if (logFilterStatus === 'angrade' && !entry.wasUndone) return false;
+      if (logFilterExercise !== 'alla' && entry.exerciseId !== logFilterExercise) return false;
+      return true;
+    });
+  }, [sessionLogs, logFilterStatus, logFilterExercise]);
 
   // Check if everything has been correctly paired for celebration modal/status
   const isOptimalSolve = useMemo(() => {
@@ -498,6 +653,45 @@ const SnottranLab: React.FC = () => {
               </div>
             )}
 
+            {/* Svårighetsgrad Selector */}
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 mb-6 font-sans">
+              <label className="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2.5 flex items-center gap-1.5">
+                <Lightbulb size={13} className="text-amber-500 animate-pulse" />
+                Svårighetsgrad
+              </label>
+              <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setDifficulty('nybörjare')}
+                  className={`py-2 px-3 text-[11px] font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    difficulty === 'nybörjare'
+                      ? 'bg-white text-rose-600 shadow-sm border border-slate-200/50'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <Sparkles size={12} />
+                  Nybörjare
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDifficulty('expert')}
+                  className={`py-2 px-3 text-[11px] font-black rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    difficulty === 'expert'
+                      ? 'bg-white text-indigo-600 shadow-sm border border-slate-200/50'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <Award size={12} />
+                  Expert
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-2 font-medium leading-relaxed">
+                {difficulty === 'nybörjare'
+                  ? '💡 Håll över ett mönster/skåra eller dra i tråden för att se de lysande hjälplinjerna fram till målet.'
+                  : '🔥 Helt utan hjälp. Öva dina räknekunskaper som med det fysiska spelet och se baksidan för facit!'}
+              </p>
+            </div>
+
             {/* Task Stats */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100/50 text-center">
@@ -548,26 +742,127 @@ const SnottranLab: React.FC = () => {
           </div>
 
           {/* Didactic Instruction Bubble */}
-          <div className="bg-rose-50/60 border border-rose-100 rounded-[2.5rem] p-6 text-rose-950/90 flex flex-col shadow-xs">
-            <h3 className="text-xs font-black uppercase tracking-widest text-rose-800 mb-2 flex items-center gap-2">
-              <BookOpen size={16} /> Didaktisk själv-check
-            </h3>
-            <p className="text-[11px] leading-relaxed mb-3">
-              I en fysisk snottra döljer vi facit på baksidan medan vi trär det röda garnet genom skårorna. 
-            </p>
-            <p className="text-[11px] leading-relaxed italic text-rose-800/80">
-              Vrid och vänd på snottran när du är klar! Symmetrin på baksidan avslöjar direkt om din logik och dina beräkningar stämmer, utan behov av röda kryss eller pilar.
-            </p>
+          <div className="bg-rose-50/60 border border-rose-100 rounded-[2.5rem] p-6 text-rose-950/90 flex flex-col shadow-xs transition-colors duration-300">
+            <button 
+              type="button"
+              onClick={() => setIsDidacticOpen(!isDidacticOpen)}
+              className="w-full flex items-center justify-between text-left focus:outline-none cursor-pointer select-none group"
+            >
+              <h3 className="text-xs font-black uppercase tracking-widest text-rose-800 flex items-center gap-2">
+                <BookOpen size={16} className="text-rose-700 group-hover:scale-110 transition-transform" /> 
+                Didaktisk själv-check
+              </h3>
+              <div className="text-rose-800 bg-rose-100/60 p-1.5 rounded-xl hover:bg-rose-100 transition-colors">
+                {isDidacticOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </div>
+            </button>
             
-            {/* Toggle guides during Facit check */}
-            {isFlipped && (
-              <div className="mt-4 pt-3 border-t border-rose-200/50 flex items-center justify-between">
-                <span className="text-[10px] font-bold text-rose-900 uppercase">Visa hjälplinjer på baksidan</span>
-                <button
-                  onClick={() => setShowGuideLines(!showGuideLines)}
-                  className={`w-10 h-6 rounded-full p-0.5 transition-all outline-none ${showGuideLines ? 'bg-emerald-500' : 'bg-slate-300'}`}
+            <AnimatePresence initial={false}>
+              {isDidacticOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                  animate={{ height: "auto", opacity: 1, marginTop: 12 }}
+                  exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="overflow-hidden flex flex-col text-left"
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full transition-all ${showGuideLines ? 'translate-x-4' : 'translate-x-0'}`} />
+                  <p className="text-[11px] leading-relaxed mb-3">
+                    I en fysisk snottra döljer vi facit på baksidan medan vi trär det röda garnet genom skårorna. 
+                  </p>
+                  <p className="text-[11px] leading-relaxed italic text-rose-800/80">
+                    Vrid och vänd på snottran när du är klar! Symmetrin på baksidan avslöjar direkt om din logik och dina beräkningar stämmer, utan behov av röda kryss eller pilar.
+                  </p>
+                  
+                  {/* Toggle guides during Facit check */}
+                  {isFlipped && (
+                    <div className="mt-4 pt-3 border-t border-rose-200/50 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-rose-900 uppercase">Visa hjälplinjer på baksidan</span>
+                      <button
+                        onClick={() => setShowGuideLines(!showGuideLines)}
+                        className={`w-10 h-6 rounded-full p-0.5 transition-all outline-none cursor-pointer ${showGuideLines ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                      >
+                        <div className={`w-5 h-5 bg-white rounded-full transition-all ${showGuideLines ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Mini Sessionslogg Widget i vänsterkolumnen */}
+          <div className="bg-white rounded-[2.5rem] border border-slate-200 p-6 shadow-md font-sans">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <History size={16} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">Sessionshistorik</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Gjorda val under sessionen</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-black px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg">
+                {sessionLogs.length} {sessionLogs.length === 1 ? 'val' : 'val'}
+              </span>
+            </div>
+
+            {sessionLogs.length === 0 ? (
+              <div className="py-4 text-center">
+                <p className="text-[11px] text-slate-400 italic">Inga val gjorda än. Dra garnet för att börja logga!</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {/* Quick stats mini row */}
+                <div className="flex items-center justify-between bg-slate-50 rounded-xl px-3 py-2 border border-slate-100 text-[11px]">
+                  <span className="text-slate-500 font-semibold">Träffsäkerhet:</span>
+                  <span className="font-mono font-bold text-slate-800">
+                    {logStats.correctCount}/{logStats.activeCount} ({logStats.accuracy}%)
+                  </span>
+                </div>
+
+                {/* Mini feed of last 3 choices */}
+                <div className="flex flex-col gap-1.5 mt-1">
+                  {sessionLogs.slice(0, 3).map((item) => (
+                    <div 
+                      key={item.id}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs border ${
+                        item.wasUndone 
+                          ? 'bg-slate-50/60 border-slate-200/60 text-slate-400 opacity-60'
+                          : item.isCorrect 
+                            ? 'bg-emerald-50/60 border-emerald-200/60 text-emerald-900' 
+                            : 'bg-rose-50/60 border-rose-200/60 text-rose-900'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {item.wasUndone ? (
+                          <RotateCcw size={12} className="text-slate-400 shrink-0" />
+                        ) : item.isCorrect ? (
+                          <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+                        ) : (
+                          <XCircle size={12} className="text-rose-500 shrink-0" />
+                        )}
+                        <span className="font-mono font-bold truncate">
+                          {item.leftLabel} ➔ {item.chosenRightLabel}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0 ml-1">
+                        {item.timeString.slice(0, 5)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Button to open / scroll to full log panel */}
+                <button
+                  onClick={() => {
+                    const el = document.getElementById('session-log-panel');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="mt-2 w-full py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <ListFilter size={13} />
+                  Visa detaljerad loggpanel
                 </button>
               </div>
             )}
@@ -638,7 +933,16 @@ const SnottranLab: React.FC = () => {
 
                     {/* Left & Right Notch channels cut out from the paper edges */}
                     {leftNotches.map((notch, idx) => (
-                      <g key={`l-notch-${idx}`}>
+                      <g 
+                        key={`l-notch-${idx}`}
+                        className="cursor-pointer"
+                        onPointerEnter={() => {
+                          if (!isDragging) setHoveredLeftIdx(idx);
+                        }}
+                        onPointerLeave={() => {
+                          if (!isDragging) setHoveredLeftIdx(null);
+                        }}
+                      >
                         {/* Cut Shadow circle */}
                         <circle cx={notch.x - 17} cy={notch.y} r="10" fill="#2d2219" opacity="0.12" />
                         {/* Sliced cardboard notch */}
@@ -665,7 +969,16 @@ const SnottranLab: React.FC = () => {
                     {rightNotches.map((notch, idx) => {
                       const isHovered = hoveredRightIdx === idx;
                       return (
-                        <g key={`r-notch-${idx}`}>
+                        <g 
+                          key={`r-notch-${idx}`}
+                          className="cursor-pointer"
+                          onPointerEnter={() => {
+                            if (!isDragging) setHoveredRightIdx(idx);
+                          }}
+                          onPointerLeave={() => {
+                            if (!isDragging) setHoveredRightIdx(null);
+                          }}
+                        >
                           <circle cx={notch.x + 17} cy={notch.y} r="10" fill="#2d2219" opacity="0.12" />
                           <path 
                             d={`M ${notch.x + 18} ${notch.y - 7} L ${notch.x} ${notch.y} L ${notch.x + 18} ${notch.y + 7} Z`} 
@@ -697,6 +1010,79 @@ const SnottranLab: React.FC = () => {
                       />
                       <circle cx={bottomAnchor.x} cy={bottomAnchor.y} r="7" fill="#78350f" />
                     </g>
+
+
+                    {/* Beginner mode dynamic guide-lines */}
+                    {difficulty === 'nybörjare' && !isFlipped && (
+                      <g>
+                        {/* 1. Dragging assistance */}
+                        {isDragging && activeStep < N && (() => {
+                          const correctRightIdx = getCorrectRightIdx(activeStep);
+                          if (correctRightIdx === -1) return null;
+                          const start = leftNotches[activeStep];
+                          const end = rightNotches[correctRightIdx];
+                          return (
+                            <g key="drag-assist-guide">
+                              <line
+                                x1={start.x} y1={start.y} x2={end.x} y2={end.y}
+                                stroke="#f59e0b" strokeWidth="2.5" strokeDasharray="5,6"
+                                opacity="0.6"
+                              />
+                              {/* Pulsing ring around target notch to highlight the path */}
+                              <circle
+                                cx={end.x} cy={end.y} r="14"
+                                stroke="#f59e0b" strokeWidth="2" strokeDasharray="3,3" fill="none"
+                                className="animate-spin" style={{ transformOrigin: `${end.x}px ${end.y}px`, animationDuration: '4s' }}
+                              />
+                            </g>
+                          );
+                        })()}
+
+                        {/* 2. Left side hover assistance */}
+                        {hoveredLeftIdx !== null && (() => {
+                          const correctRightIdx = getCorrectRightIdx(hoveredLeftIdx);
+                          if (correctRightIdx === -1) return null;
+                          const start = leftNotches[hoveredLeftIdx];
+                          const end = rightNotches[correctRightIdx];
+                          return (
+                            <g key={`l-hover-assist-guide-${hoveredLeftIdx}`}>
+                              <line
+                                x1={start.x} y1={start.y} x2={end.x} y2={end.y}
+                                stroke="#3b82f6" strokeWidth="2" strokeDasharray="4,4"
+                                opacity="0.65"
+                              />
+                              <circle
+                                cx={end.x} cy={end.y} r="12"
+                                stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="2,2" fill="none"
+                                className="animate-pulse"
+                              />
+                            </g>
+                          );
+                        })()}
+
+                        {/* 3. Right side hover assistance */}
+                        {hoveredRightIdx !== null && !isDragging && (() => {
+                          const correctLeftIdx = getCorrectLeftIdx(hoveredRightIdx);
+                          if (correctLeftIdx === -1) return null;
+                          const start = rightNotches[hoveredRightIdx];
+                          const end = leftNotches[correctLeftIdx];
+                          return (
+                            <g key={`r-hover-assist-guide-${hoveredRightIdx}`}>
+                              <line
+                                x1={start.x} y1={start.y} x2={end.x} y2={end.y}
+                                stroke="#10b981" strokeWidth="2" strokeDasharray="4,4"
+                                opacity="0.65"
+                              />
+                              <circle
+                                cx={end.x} cy={end.y} r="12"
+                                stroke="#10b981" strokeWidth="1.5" strokeDasharray="2,2" fill="none"
+                                className="animate-pulse"
+                              />
+                            </g>
+                          );
+                        })()}
+                      </g>
+                    )}
 
 
                     {/* ---------------- DRAWING THE YARN STRING ---------------- */}
@@ -806,7 +1192,13 @@ const SnottranLab: React.FC = () => {
                     {exercise?.leftItems.map((item, idx) => (
                       <div 
                         key={item.id} 
-                        className={`h-7 flex items-center justify-start text-stone-800 font-bold transition-all ${idx === activeStep && !isFlipped ? 'scale-110 text-rose-600 font-extrabold font-mono' : 'text-stone-700 font-mono text-sm'}`}
+                        className={`h-7 flex items-center justify-start text-stone-800 font-bold transition-all pointer-events-auto cursor-help ${idx === activeStep && !isFlipped ? 'scale-110 text-rose-600 font-extrabold font-mono' : 'text-stone-700 font-mono text-sm'}`}
+                        onPointerEnter={() => {
+                          if (!isDragging) setHoveredLeftIdx(idx);
+                        }}
+                        onPointerLeave={() => {
+                          if (!isDragging) setHoveredLeftIdx(null);
+                        }}
                       >
                         {item.shapeType ? (
                           <div className="flex items-center justify-center p-0.5" title={item.id}>
@@ -838,7 +1230,13 @@ const SnottranLab: React.FC = () => {
                     {exercise?.rightItems.map((item, idx) => (
                       <div 
                         key={item.id}
-                        className={`h-7 flex items-center justify-end text-stone-700 font-bold font-mono text-xs transition-all ${hoveredRightIdx === idx ? 'scale-110 text-emerald-600 font-black' : ''}`}
+                        className={`h-7 flex items-center justify-end text-stone-700 font-bold font-mono text-xs transition-all pointer-events-auto cursor-help ${hoveredRightIdx === idx ? 'scale-110 text-emerald-600 font-black' : ''}`}
+                        onPointerEnter={() => {
+                          if (!isDragging) setHoveredRightIdx(idx);
+                        }}
+                        onPointerLeave={() => {
+                          if (!isDragging) setHoveredRightIdx(null);
+                        }}
                       >
                         <span className="bg-white/80 backdrop-blur-[1px] px-2 py-0.5 rounded-lg border border-slate-200/50 shadow-xs leading-none">{item.label}</span>
                       </div>
@@ -1044,6 +1442,343 @@ const SnottranLab: React.FC = () => {
         </div>
 
       </div>
+
+      {/* ================= SESSIONS-LOGGPANEL ================= */}
+      <section 
+        id="session-log-panel" 
+        className="w-full max-w-6xl bg-white rounded-[2.5rem] border border-slate-200 p-6 md:p-8 shadow-xl transition-all"
+      >
+        {/* Panel Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 shrink-0">
+              <History size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-black text-slate-900 tracking-tight">Sessionslogg & Valhistorik</h2>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100">
+                  {sessionLogs.length} {sessionLogs.length === 1 ? 'val' : 'val gjorda'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Historik över alla val och garnkopplingar du har gjort under den pågående sessionen
+              </p>
+            </div>
+          </div>
+
+          {/* Header Controls */}
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            {sessionLogs.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearLogs}
+                className="px-3.5 py-2 text-xs font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all flex items-center gap-1.5 border border-slate-200 hover:border-rose-200 cursor-pointer"
+                title="Rensa sessionshistorik"
+              >
+                <Trash2 size={14} />
+                Rensa logg
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsLogPanelOpen(!isLogPanelOpen)}
+              className="px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              {isLogPanelOpen ? (
+                <>
+                  <ChevronUp size={14} /> Minimera
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={14} /> Expandera
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        <AnimatePresence initial={false}>
+          {isLogPanelOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="overflow-hidden pt-6"
+            >
+              {sessionLogs.length === 0 ? (
+                /* Empty state */
+                <div className="py-12 px-4 flex flex-col items-center justify-center text-center max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-400 mb-4">
+                    <History size={32} />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider mb-1">
+                    Inga val registrerade ännu
+                  </h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Dra det röda garnet mellan skårorna på snottran för att göra ditt första val. Alla dina kopplingar och svar under den pågående sessionen loggas och analyseras automatiskt här.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  {/* KPI Metrics Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                      <span className="block text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1">
+                        Totalt antal val
+                      </span>
+                      <span className="text-2xl font-black font-mono text-slate-800">
+                        {logStats.total}
+                      </span>
+                      {logStats.undoneCount > 0 && (
+                        <span className="text-[10px] text-slate-400 font-medium block mt-0.5">
+                          ({logStats.undoneCount} ångrade)
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="bg-emerald-50/70 rounded-2xl p-4 border border-emerald-100">
+                      <span className="block text-[10px] font-black uppercase text-emerald-600 tracking-wider mb-1 flex items-center gap-1">
+                        <CheckCircle2 size={12} /> Korrekta val
+                      </span>
+                      <span className="text-2xl font-black font-mono text-emerald-800">
+                        {logStats.correctCount}
+                      </span>
+                      <span className="text-[10px] text-emerald-600/80 font-medium block mt-0.5">
+                        av {logStats.activeCount} aktiva
+                      </span>
+                    </div>
+
+                    <div className="bg-rose-50/70 rounded-2xl p-4 border border-rose-100">
+                      <span className="block text-[10px] font-black uppercase text-rose-600 tracking-wider mb-1 flex items-center gap-1">
+                        <XCircle size={12} /> Felaktiga val
+                      </span>
+                      <span className="text-2xl font-black font-mono text-rose-800">
+                        {logStats.incorrectCount}
+                      </span>
+                      <span className="text-[10px] text-rose-600/80 font-medium block mt-0.5">
+                        kräver repetition
+                      </span>
+                    </div>
+
+                    <div className="bg-indigo-50/70 rounded-2xl p-4 border border-indigo-100">
+                      <span className="block text-[10px] font-black uppercase text-indigo-600 tracking-wider mb-1">
+                        Träffsäkerhet
+                      </span>
+                      <span className="text-2xl font-black font-mono text-indigo-900">
+                        {logStats.accuracy}%
+                      </span>
+                      <div className="w-full bg-indigo-200/60 rounded-full h-1.5 mt-2 overflow-hidden">
+                        <div 
+                          className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500" 
+                          style={{ width: `${logStats.accuracy}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Filter and Search Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                    {/* Status Filters */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1">
+                        <Filter size={12} /> Filter:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setLogFilterStatus('alla')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          logFilterStatus === 'alla'
+                            ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        Alla ({logStats.total})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLogFilterStatus('korrekt')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          logFilterStatus === 'korrekt'
+                            ? 'bg-emerald-600 text-white shadow-sm'
+                            : 'text-slate-500 hover:text-emerald-700'
+                        }`}
+                      >
+                        Korrekt ({logStats.correctCount})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLogFilterStatus('fel')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          logFilterStatus === 'fel'
+                            ? 'bg-rose-600 text-white shadow-sm'
+                            : 'text-slate-500 hover:text-rose-700'
+                        }`}
+                      >
+                        Felaktiga ({logStats.incorrectCount})
+                      </button>
+                      {logStats.undoneCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setLogFilterStatus('angrade')}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            logFilterStatus === 'angrade'
+                              ? 'bg-slate-700 text-white shadow-sm'
+                              : 'text-slate-500 hover:text-slate-700'
+                          }`}
+                        >
+                          Ångrade ({logStats.undoneCount})
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Exercise category selector */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Övning:
+                      </span>
+                      <select
+                        value={logFilterExercise}
+                        onChange={(e) => setLogFilterExercise(e.target.value)}
+                        className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                      >
+                        <option value="alla">Alla övningar</option>
+                        <option value="multiplication">Multiplikation</option>
+                        <option value="tiokamrater">Tiokamrater</option>
+                        <option value="division">Division</option>
+                        <option value="geometri">Geometri</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Logs List */}
+                  {filteredLogs.length === 0 ? (
+                    <div className="py-8 text-center text-slate-400 text-xs italic">
+                      Inga val matchar det valda filtret.
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 max-h-[460px] overflow-y-auto pr-1">
+                      {filteredLogs.map((entry) => (
+                        <div
+                          key={entry.id}
+                          className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                            entry.wasUndone
+                              ? 'bg-slate-50/70 border-slate-200 opacity-60'
+                              : entry.isCorrect
+                                ? 'bg-emerald-50/40 border-emerald-200/80 hover:bg-emerald-50/70'
+                                : 'bg-rose-50/40 border-rose-200/80 hover:bg-rose-50/70'
+                          }`}
+                        >
+                          {/* Left details: Timestamp, exercise, badges */}
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                                entry.wasUndone
+                                  ? 'bg-slate-200 text-slate-600'
+                                  : entry.isCorrect
+                                    ? 'bg-emerald-100 text-emerald-700'
+                                    : 'bg-rose-100 text-rose-700'
+                              }`}
+                            >
+                              {entry.wasUndone ? (
+                                <RotateCcw size={16} />
+                              ) : entry.isCorrect ? (
+                                <Check size={18} strokeWidth={3} />
+                              ) : (
+                                <X size={18} strokeWidth={3} />
+                              )}
+                            </div>
+
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-xs font-bold text-slate-400">
+                                  #{entry.stepNumber}
+                                </span>
+                                <span className="text-[11px] font-black text-slate-800">
+                                  {entry.exerciseName}
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider ${
+                                    entry.difficulty === 'expert'
+                                      ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                                      : 'bg-rose-50 text-rose-700 border border-rose-100'
+                                  }`}
+                                >
+                                  {entry.difficulty === 'expert' ? 'Expert' : 'Nybörjare'}
+                                </span>
+                                {entry.wasUndone && (
+                                  <span className="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600">
+                                    Ångrad
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                                <Clock size={11} />
+                                <span className="font-mono">{entry.timeString}</span>
+                                <span>•</span>
+                                <span className="italic font-medium text-slate-600">
+                                  {entry.explanation}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right details: Visual connection pair + Status badge */}
+                          <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+                            {/* Connection pill */}
+                            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs font-mono font-bold text-xs">
+                              <span className="text-slate-800 flex items-center gap-1">
+                                {entry.shapeType ? (
+                                  <span className="inline-block scale-75">{renderShapeIcon(entry.shapeType)}</span>
+                                ) : null}
+                                {entry.leftLabel}
+                              </span>
+                              <ArrowRight size={13} className="text-slate-400" />
+                              <span
+                                className={
+                                  entry.isCorrect
+                                    ? 'text-emerald-700 font-black'
+                                    : 'text-rose-600 font-black'
+                                }
+                              >
+                                {entry.chosenRightLabel}
+                              </span>
+                            </div>
+
+                            {/* Status indicator pill */}
+                            {entry.wasUndone ? (
+                              <span className="text-[10px] font-bold text-slate-400 px-2.5 py-1 bg-slate-100 rounded-lg">
+                                Ångrad
+                              </span>
+                            ) : entry.isCorrect ? (
+                              <span className="text-[10px] font-black text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                                Korrekt ✓
+                              </span>
+                            ) : (
+                              <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-black text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
+                                  Felaktigt val ✗
+                                </span>
+                                {entry.correctRightLabel && (
+                                  <span className="text-[9px] font-bold text-slate-400 mt-0.5">
+                                    Rätt: {entry.correctRightLabel}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
 
       {/* Embedded scope 3D cardboard styles */}
       <style>{`

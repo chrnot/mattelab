@@ -18,10 +18,16 @@ import Architect from './components/Architect';
 import TeacherView from './components/TeacherView';
 import PatternTowers from './components/PatternTowers';
 import SnottranLab from './components/SnottranLab';
+import NimLab from './components/NimLab';
 
-const App: React.FC = () => {
-  const [currentLab, setCurrentLab] = useState<Lab>(Lab.HOME);
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+
+const AppContent: React.FC = () => {
+  const [currentLab, setCurrentLab] = useState<Lab>(Lab.NIM);
   const [isTeacherViewOpen, setIsTeacherViewOpen] = useState(false);
+  const { theme } = useTheme();
+
+  const isDark = theme === 'dark';
 
   const renderLab = () => {
     switch (currentLab) {
@@ -41,12 +47,15 @@ const App: React.FC = () => {
       case Lab.ARCHITECT: return <Architect />;
       case Lab.PATTERN_TOWERS: return <PatternTowers />;
       case Lab.SNOTTRAN: return <SnottranLab />;
+      case Lab.NIM: return <NimLab />;
       default: return <Home />;
     }
   };
 
   return (
-    <div className="flex h-screen bg-stone-100 text-stone-900 font-sans selection:bg-amber-200 overflow-hidden">
+    <div className={`flex h-screen font-sans selection:bg-amber-500/30 overflow-hidden transition-colors duration-200 ${
+      isDark ? 'bg-stone-950 text-stone-100' : 'bg-stone-100 text-stone-900'
+    }`}>
       <Sidebar 
         currentLab={currentLab} 
         onSelectLab={setCurrentLab} 
@@ -56,10 +65,14 @@ const App: React.FC = () => {
       
       <div className="flex-1 flex flex-col relative overflow-hidden">
         {/* Beta Banner */}
-        <div className="bg-amber-50 border-b border-amber-100 px-4 py-2 flex items-center justify-center gap-3 z-30">
+        <div className={`px-4 py-2 flex items-center justify-center gap-3 z-30 border-b transition-colors ${
+          isDark 
+            ? 'bg-amber-950/30 border-amber-900/40 text-amber-200/90' 
+            : 'bg-amber-50 border-amber-100 text-amber-900/70'
+        }`}>
           <div className="flex items-center gap-1.5">
             <span className="text-[9px] bg-amber-500 text-white font-black px-1.5 py-0.5 rounded shadow-sm uppercase tracking-widest">Beta</span>
-            <p className="text-[11px] font-medium text-amber-900/70">
+            <p className={`text-[11px] font-medium ${isDark ? 'text-amber-200/80' : 'text-amber-900/70'}`}>
               Många laborationer är i <span className="font-bold">beta-version</span>. Vi utvecklar och förbättrar verktygen löpande!
             </p>
           </div>
@@ -72,6 +85,14 @@ const App: React.FC = () => {
         <TeacherView currentLab={currentLab} isOpen={isTeacherViewOpen} onToggle={() => setIsTeacherViewOpen(!isTeacherViewOpen)} />
       </div>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 };
 

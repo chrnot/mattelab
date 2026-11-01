@@ -1,0 +1,2705 @@
+<!DOCTYPE html>
+<html lang="sv" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nim – Matematisk Strategi & Laboratorium | Mattelab</title>
+  <meta name="description" content="Ett fullt funktionellt, taktilt och matematiskt strategispel för Nim med 2-potensblock, paritetsvåg, guidad upptäckt, didaktisk AI-coach och kluringar." />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            wood: {
+              50: '#fdfbf7',
+              100: '#f7f2ea',
+              200: '#ede0cd',
+              300: '#dfc7a8',
+              400: '#cca57d',
+              500: '#ba8655',
+              600: '#a76f44',
+              700: '#8b5738',
+              800: '#714631',
+              900: '#5e3a2c',
+            },
+            amberwood: {
+              DEFAULT: '#d97706',
+              glow: '#fbbf24',
+            }
+          },
+          boxShadow: {
+            'stick': '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
+            'stick-selected': '0 0 15px rgba(239, 68, 68, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+            'stick-hover': '0 0 12px rgba(245, 158, 11, 0.5)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Smidiga övergångar och stick-stilar */
+    .stick-item {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .stick-head {
+      background: radial-gradient(circle at 35% 30%, #f87171, #dc2626 60%, #991b1b 100%);
+    }
+    .stick-body {
+      background: linear-gradient(90deg, #fef3c7 0%, #fde68a 35%, #d97706 80%, #b45309 100%);
+    }
+    .stick-removing {
+      opacity: 0.35;
+      transform: scale(0.96) translateX(4px);
+      filter: saturate(0.4) brightness(0.8);
+      position: relative;
+    }
+    .stick-removing::after {
+      content: '✕';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 13px;
+      font-weight: 900;
+      color: #ef4444;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+
+    /* Animationer */
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.88; transform: scale(1.02); }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s infinite ease-in-out;
+    }
+
+    @keyframes victory-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .animate-victory {
+      animation: victory-float 3s infinite ease-in-out;
+    }
+
+    /* Skrollbar-design */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* ================= LJUST TEMA / LIGHT MODE ================= */
+    html.light, body.light {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+    }
+
+    body.light header {
+      background-color: rgba(255, 255, 255, 0.95) !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    body.light nav {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    body.light ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    body.light ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+    }
+    body.light ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Container & card background overrides */
+    body.light .bg-slate-950,
+    body.light .bg-slate-950\/70,
+    body.light .bg-slate-950\/80,
+    body.light .bg-slate-950\/90,
+    body.light .bg-slate-950\/50 {
+      background-color: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    body.light .bg-slate-900,
+    body.light .bg-slate-900\/95,
+    body.light .bg-slate-900\/80,
+    body.light .bg-slate-900\/70,
+    body.light .bg-slate-900\/60,
+    body.light .bg-slate-900\/50 {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    body.light .bg-slate-800,
+    body.light .bg-slate-800\/50,
+    body.light .bg-slate-800\/60,
+    body.light .bg-slate-800\/70,
+    body.light .bg-slate-800\/80 {
+      background-color: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #334155 !important;
+    }
+
+    body.light .hover\:bg-slate-700:hover,
+    body.light .hover\:bg-slate-800:hover,
+    body.light .hover\:bg-slate-800\/60:hover,
+    body.light .hover\:bg-slate-800\/80:hover {
+      background-color: #e2e8f0 !important;
+    }
+
+    body.light .border-slate-800,
+    body.light .border-slate-700,
+    body.light .border-slate-800\/80,
+    body.light .border-slate-700\/80,
+    body.light .border-slate-700\/50,
+    body.light .border-slate-700\/60 {
+      border-color: #e2e8f0 !important;
+    }
+
+    /* Text contrast overrides */
+    body.light .text-slate-100,
+    body.light .text-slate-200 {
+      color: #0f172a !important;
+    }
+
+    body.light .text-slate-300 {
+      color: #334155 !important;
+    }
+
+    body.light .text-slate-400 {
+      color: #64748b !important;
+    }
+
+    body.light .text-slate-500 {
+      color: #64748b !important;
+    }
+
+    /* Tabs & navigation */
+    body.light .tab-btn:not(.bg-amber-500) {
+      color: #475569 !important;
+    }
+    body.light .tab-btn:not(.bg-amber-500):hover {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+
+    /* Guided Lab Section */
+    body.light #guidedLabSection {
+      background: linear-gradient(to right, rgba(236, 253, 245, 0.95), rgba(255, 255, 255, 0.98), rgba(238, 242, 255, 0.95)) !important;
+      border-color: #a7f3d0 !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05) !important;
+    }
+    body.light #guidedLabSection .text-slate-300 {
+      color: #1e293b !important;
+    }
+    body.light #labPedagogicalTip {
+      border-color: #a7f3d0 !important;
+      color: #065f46 !important;
+    }
+
+    /* 2-Potens Block badgefärger i ljust läge */
+    body.light .bg-indigo-950\/70,
+    body.light .bg-indigo-950\/30 {
+      background-color: #eef2ff !important;
+      color: #3730a3 !important;
+      border-color: #c7d2fe !important;
+    }
+    body.light .bg-amber-950\/70,
+    body.light .bg-amber-950\/20 {
+      background-color: #fffbeb !important;
+      color: #92400e !important;
+      border-color: #fde68a !important;
+    }
+    body.light .bg-emerald-950\/70,
+    body.light .bg-emerald-950\/30 {
+      background-color: #ecfdf5 !important;
+      color: #065f46 !important;
+      border-color: #a7f3d0 !important;
+    }
+    body.light .bg-rose-950\/70,
+    body.light .bg-rose-950\/30 {
+      background-color: #fff1f2 !important;
+      color: #9f1239 !important;
+      border-color: #fecdd3 !important;
+    }
+
+    /* Paritetsmätare i ljust läge */
+    body.light .text-emerald-400 {
+      color: #059669 !important;
+    }
+    body.light .text-amber-400 {
+      color: #d97706 !important;
+    }
+    body.light .text-rose-400 {
+      color: #e11d48 !important;
+    }
+    body.light .bg-emerald-500\/10 {
+      background-color: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
+    }
+    body.light .bg-amber-500\/10 {
+      background-color: #fffbeb !important;
+      border-color: #fde68a !important;
+    }
+    body.light .bg-rose-500\/10 {
+      background-color: #fff1f2 !important;
+      border-color: #fecdd3 !important;
+    }
+
+    /* Coach-bubbla & modaler i ljust läge */
+    body.light #aiCoachBubble {
+      background-color: #f5f3ff !important;
+      border-color: #c7d2fe !important;
+    }
+    body.light #aiCoachBubble .text-indigo-200 {
+      color: #3730a3 !important;
+    }
+    body.light #aiCoachBubble .text-indigo-300 {
+      color: #4338ca !important;
+    }
+
+    body.light #rulesModal > div,
+    body.light #winnerModal > div {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans bg-slate-950 text-slate-100 selection:bg-amber-500 selection:text-slate-950 overflow-x-hidden transition-colors duration-200">
+
+  <!-- ================= TOP NAVIGATION / HEADER ================= -->
+  <header class="bg-slate-900/95 backdrop-blur border-b border-slate-800 sticky top-0 z-40 px-3 sm:px-6 py-2.5">
+    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <!-- Title & Branding -->
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-900/40 text-slate-950 font-black text-lg sm:text-xl">
+          N
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-base sm:text-lg text-slate-100 tracking-tight">NIM</h1>
+            <span class="text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full">
+              Mattelab
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block">
+            Upptäck paritet, symmetri och vinnande strategier med 2-potensmodeller
+          </p>
+        </div>
+      </div>
+
+      <!-- Center / Right Controls -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        
+        <!-- View Level Toggle: Enkel vs Fördjupad vy -->
+        <div class="bg-slate-950 p-0.5 rounded-xl border border-slate-800 flex items-center text-xs">
+          <button id="viewLevelSimpleBtn" class="px-2.5 py-1 rounded-lg font-medium transition text-xs bg-indigo-600 text-white shadow-sm flex items-center gap-1" title="Enkel didaktisk vy med 2-potenslådor och paritetsvåg (för elever)">
+            <span>🌱</span>
+            <span class="hidden md:inline">Enkel vy</span>
+          </button>
+          <button id="viewLevelAdvancedBtn" class="px-2.5 py-1 rounded-lg font-medium transition text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1" title="Fördjupad vy med binärtal, XOR-matris och Boutons formella sats">
+            <span>🔬</span>
+            <span class="hidden md:inline">Fördjupad vy</span>
+          </button>
+        </div>
+
+        <!-- Standalone Theme Toggle (för användare i ny flik / nedladdad HTML) -->
+        <button id="themeToggleBtn" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition active:scale-95 cursor-pointer" title="Växla tema (Mörkt / Ljust)">
+          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span class="hidden sm:inline">Tema</span>
+        </button>
+
+        <!-- New Game / Restart -->
+        <button id="resetGameBtn" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold shadow-sm transition flex items-center gap-1.5 active:scale-95">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>Starta om</span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN APP TABS NAVIGATION ================= -->
+  <nav class="bg-slate-900 border-b border-slate-800 px-4 sm:px-6">
+    <div class="max-w-6xl mx-auto flex items-center gap-2 overflow-x-auto py-2">
+      <!-- Tab 1: Spela & Träna -->
+      <button id="tabPlayBtn" class="tab-btn px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-2 transition bg-amber-500 text-slate-950 shadow">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Spela fritt</span>
+      </button>
+
+      <!-- Tab 2: Guidad Laboration -->
+      <button id="tabLabBtn" class="tab-btn px-3.5 py-1.5 rounded-xl font-medium text-xs flex items-center gap-2 transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+        </svg>
+        <span>🧪 Laboration (Guidad upptäckt)</span>
+      </button>
+
+      <!-- Tab 3: Uppdrag & Kluringar -->
+      <button id="tabChallengesBtn" class="tab-btn px-3.5 py-1.5 rounded-xl font-medium text-xs flex items-center gap-2 transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
+        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg>
+        <span>🧩 Uppdrag & Kluringar</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= MAIN LAYOUT ================= -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-5">
+
+    <!-- ================= GUIDED LAB STEP BANNER (VISIBLE IN LAB MODE) ================= -->
+    <section id="guidedLabSection" class="hidden bg-gradient-to-r from-emerald-950/70 via-slate-900 to-indigo-950/70 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 shadow-xl">
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-start gap-3.5">
+          <div id="labStepBadge" class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-bold text-lg flex-shrink-0">
+            1
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                Stegvis Undersökning
+              </span>
+              <h3 id="labStepTitle" class="text-sm sm:text-base font-bold text-slate-100">
+                Nivå 1: Spegelstrategin (Symmetri)
+              </h3>
+            </div>
+            <p id="labStepPrompt" class="text-xs text-slate-300 mt-1 leading-relaxed">
+              Två identiska högar (3 och 3). Fråga: <em>Kan datorn någonsin vinna om du alltid härmar motståndarens drag i den andra högen?</em>
+            </p>
+          </div>
+        </div>
+
+        <!-- Step navigation buttons -->
+        <div class="flex items-center gap-2 self-end md:self-center">
+          <button id="labPrevBtn" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed">
+            ← Föregående
+          </button>
+          <div id="labStepDots" class="flex items-center gap-1 px-1">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
+          </div>
+          <button id="labNextBtn" class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center gap-1 shadow-sm">
+            Nästa steg →
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick didactic guidance box -->
+      <div id="labPedagogicalTip" class="mt-3 pt-3 border-t border-emerald-500/20 text-xs text-emerald-300/90 flex items-center gap-2">
+        <span class="text-base">💡</span>
+        <span id="labPedagogicalTipText">Tänk: När två högar är lika stora bildar de ett perfekt par. Den som flyttar först tvingas bryta symmetrin!</span>
+      </div>
+    </section>
+
+    <!-- ================= CHALLENGES PANEL (VISIBLE IN CHALLENGES MODE) ================= -->
+    <section id="challengesSection" class="hidden bg-slate-900 border border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col gap-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold text-sm">
+            🧩
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-100">Uppdrag & Kluringar för tänkare</h3>
+            <p class="text-xs text-slate-400">Klicka på en kluring för att automatiskt ladda uppställningen på bordet</p>
+          </div>
+        </div>
+        <span class="text-xs text-amber-400 font-medium">4 Utmaningar</span>
+      </div>
+
+      <!-- Grid of 4 Challenges -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <!-- Challenge 1: (1, 2, 3) Trap -->
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 flex flex-col justify-between gap-3">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Kluring 1</span>
+              <span class="text-xs font-mono text-slate-400">Högar: [1, 2, 3]</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-200">Varför är (1, 2, 3) alltid en förlust för den som startar?</h4>
+            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              Oavsett vad spelare 1 gör, kan motståndaren alltid svara så att ställningen hamnar i säker balans (t.ex. 1-1, 2-2 eller 0).
+            </p>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+            <button class="load-challenge-btn px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition" data-challenge="1">
+              Ladda [1, 2, 3]
+            </button>
+            <details class="text-[11px] text-slate-400">
+              <summary class="cursor-pointer text-indigo-400 hover:underline">Ledtråd</summary>
+              <p class="mt-1 text-slate-300 bg-slate-900 p-2 rounded border border-slate-800">
+                1 = [1], 2 = [2], 3 = [2]+[1]. Ser du att alla 2-potenser redan finns i par?
+              </p>
+            </details>
+          </div>
+        </div>
+
+        <!-- Challenge 2: (3, 4, 5) Magic Move -->
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 flex flex-col justify-between gap-3">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Kluring 2</span>
+              <span class="text-xs font-mono text-slate-400">Högar: [3, 4, 5]</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-200">Hur vänder du (3, 4, 5) till en garanterad vinst i 1 drag?</h4>
+            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              Spelbrädet är just nu i obalans. Vilken hög ska du minska för att lämna alla block i jämna par till motståndaren?
+            </p>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+            <button class="load-challenge-btn px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition" data-challenge="2">
+              Ladda [3, 4, 5]
+            </button>
+            <details class="text-[11px] text-slate-400">
+              <summary class="cursor-pointer text-indigo-400 hover:underline">Ledtråd</summary>
+              <p class="mt-1 text-slate-300 bg-slate-900 p-2 rounded border border-slate-800">
+                Testa att ta bort 2 stickor från hög A (3 → 1). Då får du ställningen [1, 4, 5] där 4 och 1 bildar perfekta par med 5!
+              </p>
+            </details>
+          </div>
+        </div>
+
+        <!-- Challenge 3: Misère Endgame Trap -->
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 flex flex-col justify-between gap-3">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">Kluring 3</span>
+              <span class="text-xs font-mono text-slate-400">Högar: [1, 1, 2] (Misère)</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-200">Vad är den gyllene regeln för sista draget i Misère?</h4>
+            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              I Misère förlorar den som tar sista stickan. Hur många stickor ska du ta från högen med 2 för att tvinga motståndaren att förlora?
+            </p>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+            <button class="load-challenge-btn px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition" data-challenge="3">
+              Ladda [1, 1, 2]
+            </button>
+            <details class="text-[11px] text-slate-400">
+              <summary class="cursor-pointer text-indigo-400 hover:underline">Ledtråd</summary>
+              <p class="mt-1 text-slate-300 bg-slate-900 p-2 rounded border border-slate-800">
+                Ta BÅDA stickorna från 2-högen! Då lämnar du ett UDDAT antal ettor [1, 1] till motståndaren. Motståndaren tvingas ta den ena, och du tar den andra och låter motståndaren ta sista!
+              </p>
+            </details>
+          </div>
+        </div>
+
+        <!-- Challenge 4: Pure Mirror Symmetry -->
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 flex flex-col justify-between gap-3">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">Kluring 4</span>
+              <span class="text-xs font-mono text-slate-400">Högar: [5, 5]</span>
+            </div>
+            <h4 class="font-bold text-xs text-slate-200">Spegelstrategi: Varför kan Spelare 2 aldrig förlora?</h4>
+            <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+              Om Spelare 2 alltid kopierar Spelare 1:s drag i den andra högen, vem kommer ofrånkomligen att ta den sista stickan i Normalt spel?
+            </p>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800/80">
+            <button class="load-challenge-btn px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition" data-challenge="4">
+              Ladda [5, 5]
+            </button>
+            <details class="text-[11px] text-slate-400">
+              <summary class="cursor-pointer text-indigo-400 hover:underline">Ledtråd</summary>
+              <p class="mt-1 text-slate-300 bg-slate-900 p-2 rounded border border-slate-800">
+                Spelare 2 återställer alltid balansen till [X, X]. Till sist tar Spelare 1 den sista stickan i en hög [0, X], varpå Spelare 2 tömmer den andra [0, 0] och vinner!
+              </p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= GAME CONFIGURATION & CONTROLS BAR ================= -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        
+        <!-- Game Mode (PvAI vs PvP) -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Spelläge
+          </label>
+          <div class="grid grid-cols-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+            <button id="modeAiBtn" class="py-1.5 px-2 rounded-lg font-medium transition bg-amber-500 text-slate-950 font-semibold shadow">
+              Enspelare (AI)
+            </button>
+            <button id="modePvpBtn" class="py-1.5 px-2 rounded-lg font-medium transition text-slate-400 hover:text-slate-200">
+              Två spelare
+            </button>
+          </div>
+        </div>
+
+        <!-- Rule Variant (Normal vs Misère) -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Regelvariant
+          </label>
+          <div class="grid grid-cols-2 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+            <button id="ruleNormalBtn" class="py-1.5 px-2 rounded-lg font-medium transition bg-amber-500 text-slate-950 font-semibold shadow" title="Den som tar sista stickan vinner">
+              Normalt spel
+            </button>
+            <button id="ruleMisereBtn" class="py-1.5 px-2 rounded-lg font-medium transition text-slate-400 hover:text-slate-200" title="Den som tar sista stickan förlorar">
+              Misère
+            </button>
+          </div>
+
+          <!-- Informationsikon som förklarar skillnaden mellan Normalt spel och Misère -->
+          <div class="mt-1">
+            <button id="ruleInfoToggleBtn" type="button" class="w-full flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg bg-slate-950/70 hover:bg-slate-800/80 border border-slate-800 text-[11px] text-slate-400 hover:text-amber-300 transition cursor-pointer group" title="Klicka för att förklara skillnaden mellan Normalt spel och Misère">
+              <span class="flex items-center gap-1.5 font-medium">
+                <svg class="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Info om regelvarianter</span>
+              </span>
+              <span id="ruleInfoChevron" class="text-[9px] text-slate-500 group-hover:text-amber-400 transition-transform">▼</span>
+            </button>
+            <div id="ruleInfoDetails" class="mt-1 p-2.5 rounded-xl bg-slate-950 border border-amber-500/30 text-[11px] text-slate-300 space-y-1.5 shadow-md">
+              <div class="flex items-start gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1 flex-shrink-0"></span>
+                <div>
+                  <strong class="text-amber-300 font-semibold">Normalt spel:</strong>
+                  <span class="text-slate-300"> Den som tar den <em>sista stickan</em> vinner spelet.</span>
+                </div>
+              </div>
+              <div class="flex items-start gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1 flex-shrink-0"></span>
+                <div>
+                  <strong class="text-rose-300 font-semibold">Misère:</strong>
+                  <span class="text-slate-300"> Omvänd regel – den som tvingas ta den <em>sista stickan</em> förlorar spelet (motståndaren vinner).</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Difficulty (Active in PvAI) -->
+        <div id="aiDifficultyWrapper" class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            AI-svårighetsgrad
+          </label>
+          <div class="grid grid-cols-3 p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs text-center">
+            <button data-diff="easy" class="diff-btn py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-slate-200">
+              Lätt
+            </button>
+            <button data-diff="medium" class="diff-btn py-1.5 rounded-lg font-semibold transition bg-indigo-600 text-white shadow">
+              Medel
+            </button>
+            <button data-diff="unbeatable" class="diff-btn py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-slate-200">
+              Oslagbar
+            </button>
+          </div>
+        </div>
+
+        <!-- Heap Presets -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            Startuppsättning
+          </label>
+          <select id="presetSelect" class="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2 outline-none focus:border-amber-500 cursor-pointer">
+            <option value="3,4,5" selected>Standard (3, 4, 5 stickor)</option>
+            <option value="1,3,5,7">Klassisk Pyramid (1, 3, 5, 7)</option>
+            <option value="1,2,3">Snabbspel (1, 2, 3)</option>
+            <option value="3,3">Symmetrisk par (3, 3)</option>
+            <option value="5,5,5">Tre lika (5, 5, 5)</option>
+            <option value="custom">Anpassad storlek...</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Custom Heap Setup Drawer (Hidden by default) -->
+      <div id="customHeapRow" class="hidden pt-3 border-t border-slate-800/80 flex flex-wrap items-center gap-3">
+        <span class="text-xs text-slate-400 font-medium">Ange högarnas storlek (separera med kommatecken):</span>
+        <input id="customHeapInput" type="text" value="3, 4, 5" placeholder="T.ex. 3, 5, 7" class="bg-slate-950 border border-slate-700 text-slate-100 px-3 py-1.5 rounded-lg text-xs w-48 focus:border-amber-500 outline-none" />
+        <button id="applyCustomHeapBtn" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 text-xs font-semibold border border-slate-700 transition">
+          Tillämpa högar
+        </button>
+      </div>
+    </section>
+
+    <!-- ================= STATUS, TURN & DIDACTIC AI COACH BAR ================= -->
+    <section class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3.5 shadow-lg">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        
+        <!-- Active Player Avatar & Turn Info -->
+        <div class="flex items-center gap-3.5">
+          <div id="turnAvatar" class="w-11 h-11 rounded-2xl bg-amber-500 flex items-center justify-center font-bold text-slate-950 shadow-md transition-all duration-300">
+            <span class="text-base font-bold">1</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="turnText" class="text-base font-bold text-slate-100">
+                Spelare 1:s tur
+              </h2>
+              <span id="aiThinkingBadge" class="hidden text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full animate-pulse">
+                Datorn tänker...
+              </span>
+            </div>
+            <p id="turnInstruction" class="text-xs text-slate-400">
+              Klicka på stickor i en hög för att välja hur många du vill ta bort.
+            </p>
+          </div>
+        </div>
+
+        <!-- Action & Selection Controls -->
+        <div class="flex items-center gap-2.5 w-full sm:w-auto justify-end flex-wrap">
+          <!-- Move summary pill -->
+          <div id="selectionSummary" class="text-xs bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl text-slate-300 hidden">
+            Valt: <span id="selectionSummaryText" class="text-amber-400 font-bold">0 stickor</span>
+          </div>
+
+          <!-- Confirm Move Button -->
+          <button id="confirmMoveBtn" disabled class="px-5 py-2 rounded-xl bg-slate-800 text-slate-500 cursor-not-allowed font-semibold text-xs tracking-wide shadow-md transition-all duration-200 flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Bekräfta drag</span>
+          </button>
+
+          <!-- Undo Move Button -->
+          <button id="undoMoveBtn" disabled class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-500 cursor-not-allowed border border-slate-700/60 transition" title="Ångra senaste drag">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- ================= DIDACTIC COACH "TÄNK HÖGT" THOUGHT BUBBLE ================= -->
+      <div id="coachThoughtBubble" class="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-3 flex items-start gap-3 transition-all duration-300">
+        <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">
+          🧠
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-indigo-300 flex items-center gap-1.5 uppercase tracking-wider">
+              Didaktisk Coach (Tänk högt)
+            </span>
+            <button id="coachToggleBtn" class="text-[10px] text-indigo-400 hover:text-indigo-200 underline font-medium">
+              Stäng av pratbubblor
+            </button>
+          </div>
+          <p id="coachThoughtText" class="text-xs text-slate-200 mt-1 leading-relaxed">
+            Välkommen till Nim! Prova att göra ett drag. När jag (datorn) gör ett drag kommer jag att förklara mitt matematiska resonemang här.
+          </p>
+        </div>
+      </div>
+
+      <!-- ================= HYPOTHESIS TESTER (PRE-MOVE INQUIRY) ================= -->
+      <div id="hypothesisContainer" class="hidden bg-amber-950/30 border border-amber-500/30 rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">🔬</span>
+          <div>
+            <span class="text-xs font-bold text-amber-300">Testa din didaktiska hypotes innan du bekräftar:</span>
+            <p class="text-[11px] text-slate-300">Tror du att ditt valda drag lämnar spelet i balans (säker position) eller obalans?</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 self-end sm:self-center">
+          <button id="hypoBalanceBtn" class="px-2.5 py-1 rounded-lg bg-emerald-600/80 hover:bg-emerald-500 text-white font-semibold text-xs transition flex items-center gap-1">
+            ⚖️ Balans (Par)
+          </button>
+          <button id="hypoImbalanceBtn" class="px-2.5 py-1 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white font-semibold text-xs transition flex items-center gap-1">
+            ⚠️ Obalans (Udda)
+          </button>
+        </div>
+      </div>
+      <div id="hypothesisFeedback" class="hidden text-xs py-1.5 px-3 rounded-lg font-medium transition-all"></div>
+    </section>
+
+    <!-- ================= GAME BOARD (HEAPS) ================= -->
+    <section class="relative bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl min-h-[360px] flex flex-col justify-between">
+      
+      <!-- Table Header & Rule Reminder -->
+      <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <span class="text-xs uppercase tracking-wider font-bold text-slate-400">Spelbord – Taktila Stickor</span>
+        </div>
+        <div id="ruleBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300">
+          Mål: <span class="text-amber-400 font-semibold">Ta sista stickan</span>
+        </div>
+      </div>
+
+      <!-- Heaps Container (Dynamically Rendered with Matchsticks) -->
+      <div id="heapsContainer" class="flex flex-wrap items-end justify-center gap-5 sm:gap-9 my-3 sm:my-6">
+        <!-- Rendered by UIController -->
+      </div>
+
+      <!-- Quick Hint Bar -->
+      <div id="quickStatusAlert" class="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+        <span id="quickStatusText">Klicka på valfri sticka för att markera draget.</span>
+        <span class="text-slate-500 hidden sm:inline">Regel: Ta minst 1 sticka från exakt 1 hög per omgång.</span>
+      </div>
+
+      <!-- ================= GAME OVER MODAL OVERLAY ================= -->
+      <div id="gameOverModal" class="hidden absolute inset-0 z-30 bg-slate-950/90 backdrop-blur-md rounded-3xl flex items-center justify-center p-6">
+        <div class="max-w-md w-full bg-slate-900 border border-slate-700 rounded-2xl p-6 sm:p-8 text-center shadow-2xl animate-victory">
+          <div id="winnerIconBg" class="w-16 h-16 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          </div>
+          
+          <span id="winnerSubtitle" class="text-xs uppercase font-bold tracking-widest text-amber-400">
+            Spelet är avgjort!
+          </span>
+          <h3 id="winnerTitle" class="text-2xl sm:text-3xl font-extrabold text-slate-100 mt-1 mb-2">
+            Spelare 1 vinner!
+          </h3>
+          <p id="winnerDescription" class="text-xs sm:text-sm text-slate-300 mb-6 leading-relaxed">
+            Grattis! Sista stickan togs i enlighet med normala spelregler.
+          </p>
+
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <button id="playAgainBtn" class="flex-1 py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm shadow-md transition active:scale-95">
+              Spela igen
+            </button>
+            <button id="closeModalBtn" class="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs sm:text-sm border border-slate-700 transition">
+              Visa slutställning
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 1. PEDAGOGIC POWER-OF-2 MODEL & PARITY SCALE ================= -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col gap-5">
+      
+      <!-- Section Header -->
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-sm">
+            ⚖️
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
+              Visuell Paritet & 2-Potensmodeller
+            </h3>
+            <p class="text-xs text-slate-400">
+              Paketering i block om [8], [4], [2] och [1]. Två likadana block bildar ett jämnt par som tar ut varandra!
+            </p>
+          </div>
+        </div>
+
+        <!-- Parity Summary Pill -->
+        <div id="overallParityPill" class="text-xs px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Perfekt Jämvikt (Säker position)</span>
+        </div>
+      </div>
+
+      <!-- Parity Scales (Jämnt eller Udda? Vågskålar per blockstorlek) -->
+      <div class="bg-slate-950 border border-slate-800/80 rounded-xl p-4 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Paritetsmätare ("Jämnt eller Udda?")
+          </span>
+          <span class="text-[11px] text-slate-400">
+            Grön = Jämnt par (Tar ut varandra) | Gult = Ensamt udda block (Obalans)
+          </span>
+        </div>
+
+        <!-- 4 Parity Blocks Grid (8, 4, 2, 1) -->
+        <div id="parityMetersContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          <!-- Rendered by UIController -->
+        </div>
+      </div>
+
+      <!-- Visual Power-of-2 Decomposition Box for each Pile -->
+      <div class="bg-slate-950 border border-slate-800/80 rounded-xl p-4 flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Högarnas paketering i 2-potenslådor
+          </span>
+          <span class="text-[11px] text-indigo-400">
+            Se hur varje hög automatiskt bryts ned i byggstenar
+          </span>
+        </div>
+
+        <div id="powerOfTwoPilesContainer" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Rendered by UIController -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= 2. ADVANCED MATHEMATICAL ANALYSIS (BOUTON / XOR TABLE) ================= -->
+    <section id="advancedAnalysisSection" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col gap-5">
+      
+      <!-- Toggle Header -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-sm">
+            ∑
+          </div>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
+              Formell Matematisk Analys (Boutons Sats & XOR)
+            </h3>
+            <p class="text-xs text-slate-400">
+              Binär matrisberäkning och bitvis XOR utan minnessiffra
+            </p>
+          </div>
+        </div>
+
+        <!-- Toggle Switch -->
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" id="analysisToggle" class="sr-only peer" checked />
+          <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+        </label>
+      </div>
+
+      <!-- Analysis Content Drawer -->
+      <div id="analysisContent" class="flex flex-col gap-5 pt-4 border-t border-slate-800">
+        
+        <!-- Live Mathematical Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          
+          <!-- Binary Heap Matrix Table -->
+          <div class="md:col-span-2 bg-slate-950 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Binär matris per hög
+                </span>
+                <span class="text-[11px] text-indigo-400 font-mono">
+                  Potenser: 2³=8, 2²=4, 2¹=2, 2⁰=1
+                </span>
+              </div>
+
+              <!-- Binary Matrix Table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-center border-collapse">
+                  <thead>
+                    <tr class="text-slate-400 border-b border-slate-800">
+                      <th class="py-1.5 px-3 text-left font-semibold">Hög</th>
+                      <th class="py-1.5 px-2 font-semibold">Antal</th>
+                      <th class="py-1.5 px-2 font-mono text-indigo-300">8 (2³)</th>
+                      <th class="py-1.5 px-2 font-mono text-indigo-300">4 (2²)</th>
+                      <th class="py-1.5 px-2 font-mono text-indigo-300">2 (2¹)</th>
+                      <th class="py-1.5 px-2 font-mono text-indigo-300">1 (2⁰)</th>
+                    </tr>
+                  </thead>
+                  <tbody id="binaryTableBody" class="divide-y divide-slate-800/50 font-mono">
+                    <!-- Injected by UIController -->
+                  </tbody>
+                  <tfoot class="border-t-2 border-slate-700 bg-slate-900/50 font-mono font-bold">
+                    <tr>
+                      <td class="py-2 px-3 text-left text-amber-400 font-sans">Nim-summa (XOR)</td>
+                      <td id="tableDecimalSum" class="py-2 px-2 text-amber-400">–</td>
+                      <td id="tableXorBit3" class="py-2 px-2 text-amber-400">0</td>
+                      <td id="tableXorBit2" class="py-2 px-2 text-amber-400">0</td>
+                      <td id="tableXorBit1" class="py-2 px-2 text-amber-400">0</td>
+                      <td id="tableXorBit0" class="py-2 px-2 text-amber-400">0</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <p class="text-[11px] text-slate-400 mt-3 italic">
+              * Nim-summan beräknas via binär addition utan minnessiffra (XOR, ⊕). Om varje kolumn har ett jämnt antal ettor blir XOR-summan 0.
+            </p>
+          </div>
+
+          <!-- Position Evaluation Card -->
+          <div class="bg-slate-950 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Ställningens teoretiska status
+              </span>
+              
+              <div id="balanceStatusBadge" class="mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col gap-1">
+                <div class="flex items-center gap-2">
+                  <span id="balanceStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                  <span id="balanceStatusTitle" class="font-bold text-sm text-emerald-400">
+                    I balans (Nim-summa = 0)
+                  </span>
+                </div>
+                <p id="balanceStatusDesc" class="text-xs text-slate-300 leading-relaxed">
+                  Detta är en P-position (Previous player winning / Säker position). Den spelare som gjorde förra draget har en matematisk vinstgaranti vid optimalt spel.
+                </p>
+              </div>
+
+              <!-- Optimal Move Advice -->
+              <div class="mt-4">
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                  <span>Matematiskt dragtips:</span>
+                  <button id="toggleHintBtn" class="text-[11px] text-amber-400 hover:text-amber-300 underline font-medium">
+                    Visa tips
+                  </button>
+                </div>
+                <div id="hintContentBox" class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 font-mono hidden">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500">
+              Teori: Charles L. Bouton (1901), Harvard University.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Didactic Theory Accordion / Info Card -->
+        <details class="group bg-slate-950/70 border border-slate-800 rounded-xl p-4 transition">
+          <summary class="cursor-pointer text-xs font-bold text-indigo-400 flex items-center justify-between list-none">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Didaktisk fördjupning för lärare & elever: Varför fungerar 2-potenserna?
+            </span>
+            <svg class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+          <div class="mt-3 text-xs text-slate-300 leading-relaxed space-y-2 border-t border-slate-800 pt-3">
+            <p>
+              <strong>Boutons sats (1901):</strong> Alla positiva heltal kan skrivas som en unik summa av 2-potenser (1, 2, 4, 8, ...). Spelet Nim avgörs av om dessa potenser uppträder i <em>jämnt</em> eller <em>udda</em> antal:
+            </p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li><strong>P-position (Balans / Säker position):</strong> Nim-summan är 0. Varje blockstorlek har en jämn partner. Den som flyttar tvingas ändra exakt en hög, vilket garanterat slår sönder minst en 2-potens och skapar obalans.</li>
+              <li><strong>N-position (Obalans / Möjlighet till vinstdrag):</strong> Nim-summan är &gt; 0. Det finns alltid minst ett drag som tar bort eller justerar stickor så att alla block återigen blir parvisa.</li>
+              <li><strong>Misère-finessen:</strong> I Misère (där sista stickan förlorar) spelar man precis som i Normalt spel tills bara <em>en enda hög</em> är större än 1. Då ändrar man den högen till 0 eller 1 så att det återstår ett <strong>udda</strong> antal ettor till motståndaren!</li>
+            </ul>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- ================= GAME HISTORY / MOVE LOG ================= -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Historik över drag i pågående omgång
+        </h4>
+        <button id="clearLogBtn" class="text-[11px] text-slate-500 hover:text-slate-300 transition">
+          Rensa historik
+        </button>
+      </div>
+
+      <div id="moveLogContainer" class="max-h-36 overflow-y-auto space-y-1.5 pr-1 text-xs font-mono text-slate-300">
+        <div class="text-slate-500 text-xs italic py-2">Inga drag har gjorts ännu. Gör ett drag för att starta omgången.</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= RULES MODAL ================= -->
+  <div id="rulesModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-lg text-slate-100 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-md bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">?</span>
+          Spelregler & Didaktik för Nim
+        </h3>
+        <button id="closeRulesBtn" class="text-slate-400 hover:text-slate-100 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="text-xs text-slate-300 space-y-3 leading-relaxed max-h-[70vh] overflow-y-auto pr-1">
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-amber-400 mb-1">Grundregler</h4>
+          <p>
+            Spelarna turas om att ta bort föremål (stickor eller brickor) från spelbordet.
+          </p>
+          <ul class="list-disc pl-5 mt-1.5 space-y-1 text-slate-400">
+            <li>I varje drag måste du ta minst 1 sticka.</li>
+            <li>Du får ta hur många stickor du vill, men <strong>endast från en och samma hög</strong>.</li>
+          </ul>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-amber-400 mb-1">Två regelvarianter</h4>
+          <p><strong>1. Normalt spel (Standard):</strong> Den spelare som plockar den allra sista stickan från bordet vinner spelet.</p>
+          <p class="mt-1"><strong>2. Misère:</strong> Den spelare som tvingas plocka den allra sista stickan förlorar spelet (den andra spelaren vinner).</p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-emerald-400 mb-1">Didaktisk hemlighet: Paritet</h4>
+          <p>Dela upp varje hög i 2-potenser: [8], [4], [2] och [1]. Om varje blockstorlek finns i ett <strong>jämnt antal</strong> är du i en säker position. Motståndaren tvingas förstöra ett par!</p>
+        </div>
+
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+          <h4 class="font-bold text-indigo-400 mb-1">Hur fungerar AI-motståndarna?</h4>
+          <p><strong>Lätt:</strong> Slumpar högar och antal stickor.</p>
+          <p class="mt-1"><strong>Medel:</strong> Spelar matematiskt optimalt i cirka 50 % av fallen.</p>
+          <p class="mt-1"><strong>Oslagbar:</strong> Utför Boutons matematiska algoritm med perfekt balansering och Misère-slutspel.</p>
+        </div>
+      </div>
+
+      <button id="rulesGotItBtn" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition">
+        Uppfattat, låt mig spela!
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= SOUND SYNTHESIZER (WEB AUDIO API) ================= -->
+  <script>
+    /**
+     * SOUND EFFECTS ENGINE
+     * Subtila, behagliga ljudeffekter syntetiserade i realtid med Web Audio API.
+     * Ingen extern filnedladdning krävs (100% offline).
+     */
+    const SoundFx = {
+      ctx: null,
+      enabled: true,
+
+      init() {
+        try {
+          if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+              this.ctx = new AudioContext();
+            }
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+          }
+        } catch (e) {
+          console.warn('Web Audio init not available:', e);
+        }
+      },
+
+      loadPreference() {
+        try {
+          const saved = localStorage.getItem('nim_sound_enabled');
+          if (saved !== null) {
+            this.enabled = saved === '1';
+          }
+        } catch (e) {}
+      },
+
+      toggle() {
+        this.enabled = !this.enabled;
+        try {
+          localStorage.setItem('nim_sound_enabled', this.enabled ? '1' : '0');
+        } catch (e) {}
+        if (this.enabled) {
+          this.playStickClick();
+        }
+        try {
+          window.parent?.postMessage({ type: 'NIM_SOUND_STATUS', enabled: this.enabled }, '*');
+        } catch (e) {}
+        return this.enabled;
+      },
+
+      playStickClick() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(560, now);
+          osc.frequency.exponentialRampToValueAtTime(220, now + 0.045);
+
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.045);
+        } catch (e) {}
+      },
+
+      playRemove() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const notes = [380, 560, 720];
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const startTime = now + idx * 0.035;
+            const duration = 0.09;
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, startTime);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.25, startTime + duration);
+
+            gain.gain.setValueAtTime(0.13, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+          });
+        } catch (e) {}
+      },
+
+      playError() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const freqs = [155, 120];
+          freqs.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const startTime = now + idx * 0.08;
+            const duration = 0.09;
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startTime);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.75, startTime + duration);
+
+            gain.gain.setValueAtTime(0.14, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+          });
+        } catch (e) {}
+      },
+
+      playWin() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const startTime = now + idx * 0.09;
+            const duration = idx === notes.length - 1 ? 0.45 : 0.25;
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, startTime);
+
+            gain.gain.setValueAtTime(0.16, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+          });
+        } catch (e) {}
+      }
+    };
+  </script>
+
+  <!-- ================= JAVASCRIPT: MODULAR CODE (GameState, NimEngine, AIPlayer, UIController) ================= -->
+  <script>
+    /**
+     * 1. GAME STATE MODULE
+     */
+    const GameState = {
+      heaps: [3, 4, 5],
+      initialHeaps: [3, 4, 5],
+      mode: 'ai', // 'ai' | 'pvp'
+      rule: 'normal', // 'normal' | 'misere'
+      difficulty: 'medium', // 'easy' | 'medium' | 'unbeatable' (förvalt: Medel)
+      
+      // Didaktiska vyer och lägen
+      appTab: 'play', // 'play' | 'lab' | 'challenges'
+      viewLevel: 'simple', // 'simple' | 'advanced'
+      coachEnabled: true,
+      lastAiExplanation: 'Välkommen till Nim! Gör ditt första drag så förklarar jag min strategi här.',
+      
+      // Guidad laboration
+      labStep: 1, // 1: Symmetri (3,3), 2: Slutspel (1,1,2), 3: Magiska talet (3,4,5)
+      
+      // Turhantering: 1 = Spelare 1, 2 = Spelare 2 eller Datorn
+      currentPlayer: 1, 
+      
+      // Aktuellt användarval inför drag
+      selectedHeapIndex: null,
+      selectedCount: 0,
+      
+      // Draglogg och ångra-stack
+      history: [],
+      moveLogs: [],
+      
+      // Spelstatus
+      isGameOver: false,
+      winner: null,
+      isAiThinking: false,
+
+      reset(presetArray = null) {
+        if (presetArray) {
+          this.initialHeaps = [...presetArray];
+        }
+        this.heaps = [...this.initialHeaps];
+        this.currentPlayer = 1;
+        this.selectedHeapIndex = null;
+        this.selectedCount = 0;
+        this.history = [];
+        this.moveLogs = [];
+        this.isGameOver = false;
+        this.winner = null;
+        this.isAiThinking = false;
+      },
+
+      recordMove(player, heapIndex, countRemoved) {
+        this.history.push({
+          heaps: [...this.heaps],
+          currentPlayer: this.currentPlayer,
+        });
+
+        const prevCount = this.heaps[heapIndex];
+        this.heaps[heapIndex] -= countRemoved;
+        const newCount = this.heaps[heapIndex];
+
+        const heapLabel = String.fromCharCode(65 + heapIndex);
+        const playerName = this.getPlayerName(player);
+        const logEntry = {
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          player,
+          playerName,
+          heapLabel,
+          countRemoved,
+          prevCount,
+          newCount,
+          remainingHeaps: [...this.heaps]
+        };
+        this.moveLogs.unshift(logEntry);
+
+        this.selectedHeapIndex = null;
+        this.selectedCount = 0;
+      },
+
+      undo() {
+        if (this.history.length === 0 || this.isAiThinking) return false;
+
+        const stepsToUndo = (this.mode === 'ai' && this.history.length >= 2 && this.currentPlayer === 1) ? 2 : 1;
+        
+        for (let i = 0; i < stepsToUndo; i++) {
+          if (this.history.length > 0) {
+            const prevState = this.history.pop();
+            this.heaps = prevState.heaps;
+            this.currentPlayer = prevState.currentPlayer;
+            if (this.moveLogs.length > 0) {
+              this.moveLogs.shift();
+            }
+          }
+        }
+
+        this.selectedHeapIndex = null;
+        this.selectedCount = 0;
+        this.isGameOver = false;
+        this.winner = null;
+        return true;
+      },
+
+      getPlayerName(player) {
+        if (player === 1) return 'Spelare 1';
+        return this.mode === 'ai' ? 'Datorn (AI)' : 'Spelare 2';
+      }
+    };
+
+    /**
+     * 2. NIM ENGINE MODULE
+     * Rena matematiska beräkningar: XOR, 2-potensnedbrytning, Boutons sats, förklaringar.
+     */
+    const NimEngine = {
+      getNimSum(heaps) {
+        return heaps.reduce((acc, count) => acc ^ count, 0);
+      },
+
+      isTerminal(heaps) {
+        return heaps.every(count => count === 0);
+      },
+
+      getWinner(lastPlayer, rule) {
+        if (rule === 'normal') {
+          return lastPlayer;
+        } else {
+          return lastPlayer === 1 ? 2 : 1;
+        }
+      },
+
+      toBinary4Bit(number) {
+        const bits = [];
+        for (let i = 3; i >= 0; i--) {
+          bits.push((number >> i) & 1);
+        }
+        return bits;
+      },
+
+      // Returnerar vilka 2-potensblock (8, 4, 2, 1) ett tal består av
+      getPowerOfTwoBlocks(count) {
+        const blocks = [];
+        if (count & 8) blocks.push(8);
+        if (count & 4) blocks.push(4);
+        if (count & 2) blocks.push(2);
+        if (count & 1) blocks.push(1);
+        return blocks;
+      },
+
+      // Returnerar frekvens och paritetsstatus för varje blockstorlek [8, 4, 2, 1] över hela brädet
+      getParityReport(heaps) {
+        const counts = { 8: 0, 4: 0, 2: 0, 1: 0 };
+        heaps.forEach(h => {
+          if (h & 8) counts[8]++;
+          if (h & 4) counts[4]++;
+          if (h & 2) counts[2]++;
+          if (h & 1) counts[1]++;
+        });
+
+        const status = {};
+        let allBalanced = true;
+        [8, 4, 2, 1].forEach(size => {
+          const count = counts[size];
+          const isEven = count % 2 === 0;
+          status[size] = {
+            count,
+            isEven,
+            pairs: Math.floor(count / 2),
+            unpaired: count % 2
+          };
+          if (!isEven) allBalanced = false;
+        });
+
+        return { counts, status, allBalanced };
+      },
+
+      getWinningMove(heaps, rule) {
+        const nimSum = this.getNimSum(heaps);
+
+        // --- MISÈRE SLUTSPELSHANTERING ---
+        if (rule === 'misere') {
+          const heapsOverOne = heaps.filter(c => c > 1);
+          
+          if (heapsOverOne.length === 1) {
+            const heapIdx = heaps.findIndex(c => c > 1);
+            const heapsOfSizeOne = heaps.filter((c, idx) => idx !== heapIdx && c === 1).length;
+
+            if (heapsOfSizeOne % 2 === 0) {
+              const countToRemove = heaps[heapIdx] - 1;
+              return { 
+                heapIndex: heapIdx, 
+                countToRemove,
+                reason: `Misère-slutspel: Jag lämnade ett udda antal 1-stickshögar (${heapsOfSizeOne + 1} st) så att du tvingas ta den sista!`
+              };
+            } else {
+              const countToRemove = heaps[heapIdx];
+              return { 
+                heapIndex: heapIdx, 
+                countToRemove,
+                reason: `Misère-slutspel: Jag tömde hela högen så att det kvarstår ett udda antal (${heapsOfSizeOne} st) 1-stickshögar till dig!`
+              };
+            }
+          }
+
+          if (heapsOverOne.length === 0) {
+            const firstValidIdx = heaps.findIndex(c => c > 0);
+            return { 
+              heapIndex: firstValidIdx, 
+              countToRemove: 1,
+              reason: `Slutspelsdrag: Jag tog 1 sticka från hög ${String.fromCharCode(65 + firstValidIdx)}.`
+            };
+          }
+        }
+
+        // --- STANDARDSITUATION (Boutons sats: XOR = 0) ---
+        if (nimSum !== 0) {
+          for (let i = 0; i < heaps.length; i++) {
+            const heapCount = heaps[i];
+            const targetCount = heapCount ^ nimSum;
+            if (targetCount < heapCount) {
+              const countToRemove = heapCount - targetCount;
+              const heapLetter = String.fromCharCode(65 + i);
+              return {
+                heapIndex: i,
+                countToRemove,
+                reason: `Jag upptäckte en obalans i 2-potenserna (Nim-summa = ${nimSum}). Genom att ta ${countToRemove} stickor från Hög ${heapLetter} (lämnar ${targetCount} st) återställde jag alla block till jämna par!`
+              };
+            }
+          }
+        }
+
+        // Defensivt läge (nimSum === 0)
+        let maxHeapIdx = 0;
+        for (let i = 1; i < heaps.length; i++) {
+          if (heaps[i] > heaps[maxHeapIdx]) {
+            maxHeapIdx = i;
+          }
+        }
+        return {
+          heapIndex: maxHeapIdx,
+          countToRemove: 1,
+          isDefensive: true,
+          reason: `Snyggt spelat! Du lämnade brädet i perfekt jämvikt (Nim-summa = 0). Jag tvingades göra ett defensivt drag (tog 1 från Hög ${String.fromCharCode(65 + maxHeapIdx)}) och får hoppas på en öppning.`
+        };
+      }
+    };
+
+    /**
+     * 3. AI PLAYER MODULE
+     */
+    const AIPlayer = {
+      makeMove(callback) {
+        GameState.isAiThinking = true;
+        UIController.updateStatusIndicators();
+
+        setTimeout(() => {
+          const move = this.calculateMove();
+          GameState.isAiThinking = false;
+          if (move && move.reason) {
+            GameState.lastAiExplanation = move.reason;
+          }
+          callback(move);
+        }, 800);
+      },
+
+      calculateMove() {
+        const { heaps, difficulty, rule } = GameState;
+        
+        const validHeapIndices = heaps
+          .map((count, idx) => ({ count, idx }))
+          .filter(item => item.count > 0);
+
+        if (validHeapIndices.length === 0) return null;
+
+        if (difficulty === 'easy') {
+          const move = this.getRandomMove(validHeapIndices);
+          move.reason = `(Lätt läge) Jag valde slumpmässigt att ta ${move.countToRemove} stickor från Hög ${String.fromCharCode(65 + move.heapIndex)}.`;
+          return move;
+        }
+
+        if (difficulty === 'medium') {
+          const playOptimal = Math.random() < 0.5;
+          if (playOptimal) {
+            return NimEngine.getWinningMove(heaps, rule);
+          } else {
+            const move = this.getRandomMove(validHeapIndices);
+            move.reason = `(Medel läge) Jag gjorde ett spontant drag och tog ${move.countToRemove} stickor från Hög ${String.fromCharCode(65 + move.heapIndex)}.`;
+            return move;
+          }
+        }
+
+        // Oslagbar
+        return NimEngine.getWinningMove(heaps, rule);
+      },
+
+      getRandomMove(validHeapIndices) {
+        const randomTarget = validHeapIndices[Math.floor(Math.random() * validHeapIndices.length)];
+        const countToRemove = Math.floor(Math.random() * randomTarget.count) + 1;
+        return {
+          heapIndex: randomTarget.idx,
+          countToRemove
+        };
+      }
+    };
+
+    /**
+     * 4. UI CONTROLLER MODULE
+     */
+    const UIController = {
+      elements: {},
+      _errorTimer: null,
+
+      init() {
+        SoundFx.loadPreference();
+        this.cacheDOMElements();
+        this.bindEvents();
+        this.setDifficulty(GameState.difficulty, false);
+        this.updateSoundUI();
+        this.updateViewLevelUI();
+        this.renderAll();
+      },
+
+      cacheDOMElements() {
+        this.elements = {
+          heapsContainer: document.getElementById('heapsContainer'),
+          confirmMoveBtn: document.getElementById('confirmMoveBtn'),
+          undoMoveBtn: document.getElementById('undoMoveBtn'),
+          resetGameBtn: document.getElementById('resetGameBtn'),
+          selectionSummary: document.getElementById('selectionSummary'),
+          selectionSummaryText: document.getElementById('selectionSummaryText'),
+          turnAvatar: document.getElementById('turnAvatar'),
+          turnText: document.getElementById('turnText'),
+          turnInstruction: document.getElementById('turnInstruction'),
+          aiThinkingBadge: document.getElementById('aiThinkingBadge'),
+          ruleBadge: document.getElementById('ruleBadge'),
+          
+          // Lägesknappar
+          modeAiBtn: document.getElementById('modeAiBtn'),
+          modePvpBtn: document.getElementById('modePvpBtn'),
+          ruleNormalBtn: document.getElementById('ruleNormalBtn'),
+          ruleMisereBtn: document.getElementById('ruleMisereBtn'),
+          ruleInfoToggleBtn: document.getElementById('ruleInfoToggleBtn'),
+          ruleInfoDetails: document.getElementById('ruleInfoDetails'),
+          ruleInfoChevron: document.getElementById('ruleInfoChevron'),
+          diffButtons: document.querySelectorAll('.diff-btn'),
+          aiDifficultyWrapper: document.getElementById('aiDifficultyWrapper'),
+          presetSelect: document.getElementById('presetSelect'),
+          customHeapRow: document.getElementById('customHeapRow'),
+          customHeapInput: document.getElementById('customHeapInput'),
+          applyCustomHeapBtn: document.getElementById('applyCustomHeapBtn'),
+
+          // Flikar
+          tabPlayBtn: document.getElementById('tabPlayBtn'),
+          tabLabBtn: document.getElementById('tabLabBtn'),
+          tabChallengesBtn: document.getElementById('tabChallengesBtn'),
+          guidedLabSection: document.getElementById('guidedLabSection'),
+          challengesSection: document.getElementById('challengesSection'),
+          advancedAnalysisSection: document.getElementById('advancedAnalysisSection'),
+
+          // View level
+          viewLevelSimpleBtn: document.getElementById('viewLevelSimpleBtn'),
+          viewLevelAdvancedBtn: document.getElementById('viewLevelAdvancedBtn'),
+
+          // Coach & Hypotes
+          coachThoughtBubble: document.getElementById('coachThoughtBubble'),
+          coachThoughtText: document.getElementById('coachThoughtText'),
+          coachToggleBtn: document.getElementById('coachToggleBtn'),
+          hypothesisContainer: document.getElementById('hypothesisContainer'),
+          hypothesisFeedback: document.getElementById('hypothesisFeedback'),
+          hypoBalanceBtn: document.getElementById('hypoBalanceBtn'),
+          hypoImbalanceBtn: document.getElementById('hypoImbalanceBtn'),
+
+          // Paritetsmätare & 2-potenser
+          parityMetersContainer: document.getElementById('parityMetersContainer'),
+          powerOfTwoPilesContainer: document.getElementById('powerOfTwoPilesContainer'),
+          overallParityPill: document.getElementById('overallParityPill'),
+
+          // Guidad lab
+          labStepBadge: document.getElementById('labStepBadge'),
+          labStepTitle: document.getElementById('labStepTitle'),
+          labStepPrompt: document.getElementById('labStepPrompt'),
+          labPedagogicalTipText: document.getElementById('labPedagogicalTipText'),
+          labPrevBtn: document.getElementById('labPrevBtn'),
+          labNextBtn: document.getElementById('labNextBtn'),
+          labStepDots: document.getElementById('labStepDots'),
+
+          // Analysvy
+          analysisToggle: document.getElementById('analysisToggle'),
+          analysisContent: document.getElementById('analysisContent'),
+          binaryTableBody: document.getElementById('binaryTableBody'),
+          tableDecimalSum: document.getElementById('tableDecimalSum'),
+          tableXorBit3: document.getElementById('tableXorBit3'),
+          tableXorBit2: document.getElementById('tableXorBit2'),
+          tableXorBit1: document.getElementById('tableXorBit1'),
+          tableXorBit0: document.getElementById('tableXorBit0'),
+          balanceStatusBadge: document.getElementById('balanceStatusBadge'),
+          balanceStatusDot: document.getElementById('balanceStatusDot'),
+          balanceStatusTitle: document.getElementById('balanceStatusTitle'),
+          balanceStatusDesc: document.getElementById('balanceStatusDesc'),
+          hintContentBox: document.getElementById('hintContentBox'),
+          toggleHintBtn: document.getElementById('toggleHintBtn'),
+
+          // Historik & Modaler
+          moveLogContainer: document.getElementById('moveLogContainer'),
+          clearLogBtn: document.getElementById('clearLogBtn'),
+          gameOverModal: document.getElementById('gameOverModal'),
+          winnerTitle: document.getElementById('winnerTitle'),
+          winnerSubtitle: document.getElementById('winnerSubtitle'),
+          winnerDescription: document.getElementById('winnerDescription'),
+          playAgainBtn: document.getElementById('playAgainBtn'),
+          closeModalBtn: document.getElementById('closeModalBtn'),
+          rulesModalBtn: document.getElementById('rulesModalBtn'),
+          rulesModal: document.getElementById('rulesModal'),
+          closeRulesBtn: document.getElementById('closeRulesBtn'),
+          rulesGotItBtn: document.getElementById('rulesGotItBtn'),
+          soundToggleBtn: document.getElementById('soundToggleBtn'),
+          soundOnIcon: document.getElementById('soundOnIcon'),
+          soundOffIcon: document.getElementById('soundOffIcon'),
+          soundLabel: document.getElementById('soundLabel'),
+          quickStatusAlert: document.getElementById('quickStatusAlert'),
+          quickStatusText: document.getElementById('quickStatusText'),
+          themeToggleBtn: document.getElementById('themeToggleBtn')
+        };
+      },
+
+      bindEvents() {
+        const el = this.elements;
+
+        // Tema-växlare
+        if (el.themeToggleBtn) {
+          el.themeToggleBtn.addEventListener('click', () => {
+            ThemeManager.toggle();
+          });
+        }
+
+        // Flik-byten
+        el.tabPlayBtn.addEventListener('click', () => this.switchTab('play'));
+        el.tabLabBtn.addEventListener('click', () => this.switchTab('lab'));
+        el.tabChallengesBtn.addEventListener('click', () => this.switchTab('challenges'));
+
+        // View level toggles
+        el.viewLevelSimpleBtn.addEventListener('click', () => this.setViewLevel('simple'));
+        el.viewLevelAdvancedBtn.addEventListener('click', () => this.setViewLevel('advanced'));
+
+        // Didaktisk coach toggle
+        el.coachToggleBtn.addEventListener('click', () => {
+          GameState.coachEnabled = !GameState.coachEnabled;
+          el.coachThoughtBubble.classList.toggle('hidden', !GameState.coachEnabled);
+          el.coachToggleBtn.textContent = GameState.coachEnabled ? 'Stäng av pratbubblor' : 'Sätt på coach';
+        });
+
+        // Hypotes-knappar
+        el.hypoBalanceBtn.addEventListener('click', () => this.checkHypothesis(true));
+        el.hypoImbalanceBtn.addEventListener('click', () => this.checkHypothesis(false));
+
+        // Lab navigation
+        el.labPrevBtn.addEventListener('click', () => this.changeLabStep(-1));
+        el.labNextBtn.addEventListener('click', () => this.changeLabStep(1));
+
+        // Ladda kluringar
+        document.querySelectorAll('.load-challenge-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const chId = e.currentTarget.getAttribute('data-challenge');
+            this.loadChallenge(chId);
+          });
+        });
+
+        // Spelläge
+        el.modeAiBtn.addEventListener('click', () => this.setMode('ai'));
+        el.modePvpBtn.addEventListener('click', () => this.setMode('pvp'));
+
+        // Regelvariant
+        el.ruleNormalBtn.addEventListener('click', () => this.setRule('normal'));
+        el.ruleMisereBtn.addEventListener('click', () => this.setRule('misere'));
+
+        // Svårighetsgrader
+        el.diffButtons.forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const diff = e.currentTarget.getAttribute('data-diff');
+            this.setDifficulty(diff);
+          });
+        });
+
+        // Förinställningar
+        el.presetSelect.addEventListener('change', (e) => {
+          const val = e.target.value;
+          if (val === 'custom') {
+            el.customHeapRow.classList.remove('hidden');
+          } else {
+            el.customHeapRow.classList.add('hidden');
+            const arr = val.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0);
+            GameState.reset(arr);
+            SoundFx.playStickClick();
+            this.renderAll();
+          }
+        });
+
+        el.applyCustomHeapBtn.addEventListener('click', () => {
+          const val = el.customHeapInput.value;
+          const arr = val.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0);
+          if (arr.length > 0 && arr.length <= 8) {
+            GameState.reset(arr);
+            SoundFx.playStickClick();
+            this.renderAll();
+          } else {
+            SoundFx.playError();
+            this.flashErrorMessage('Ange mellan 1 och 8 giltiga positiva tal (t.ex. 3, 5, 7).');
+          }
+        });
+
+        // Bekräfta drag
+        el.confirmMoveBtn.addEventListener('click', () => {
+          if (GameState.isGameOver) {
+            SoundFx.playError();
+            this.flashErrorMessage('Omgången är redan avslutad. Klicka på "Starta om".');
+            return;
+          }
+          if (GameState.isAiThinking || (GameState.mode === 'ai' && GameState.currentPlayer === 2)) {
+            SoundFx.playError();
+            this.flashErrorMessage('Vänta medan datorn slutför sitt drag.');
+            return;
+          }
+          if (GameState.selectedHeapIndex === null || GameState.selectedCount <= 0) {
+            SoundFx.playError();
+            this.flashErrorMessage('Markera minst en sticka att ta bort före du bekräftar!');
+            return;
+          }
+          this.executePlayerMove();
+        });
+
+        // Ångra drag
+        el.undoMoveBtn.addEventListener('click', () => {
+          if (GameState.history.length === 0 || GameState.isAiThinking || GameState.isGameOver) {
+            SoundFx.playError();
+            this.flashErrorMessage('Det finns inga tidigare drag att ångra just nu.');
+            return;
+          }
+          if (GameState.undo()) {
+            SoundFx.playStickClick();
+            this.renderAll();
+          }
+        });
+
+        // Starta om
+        el.resetGameBtn.addEventListener('click', () => {
+          GameState.reset();
+          SoundFx.playStickClick();
+          this.renderAll();
+        });
+
+        el.playAgainBtn.addEventListener('click', () => {
+          el.gameOverModal.classList.add('hidden');
+          GameState.reset();
+          SoundFx.playStickClick();
+          this.renderAll();
+        });
+
+        el.closeModalBtn.addEventListener('click', () => {
+          el.gameOverModal.classList.add('hidden');
+        });
+
+        // Ljud på/av toggle (om knappen finns i DOM)
+        if (el.soundToggleBtn) {
+          el.soundToggleBtn.addEventListener('click', () => {
+            SoundFx.toggle();
+            this.updateSoundUI();
+          });
+        }
+
+        // Informationsruta om regelvarianter (Normal vs Misère)
+        if (el.ruleInfoToggleBtn && el.ruleInfoDetails) {
+          el.ruleInfoToggleBtn.addEventListener('click', () => {
+            const isHidden = el.ruleInfoDetails.classList.toggle('hidden');
+            if (el.ruleInfoChevron) {
+              el.ruleInfoChevron.textContent = isHidden ? '▼' : '▲';
+            }
+          });
+        }
+
+        // Regler Modal
+        if (el.rulesModalBtn) {
+          el.rulesModalBtn.addEventListener('click', () => el.rulesModal.classList.remove('hidden'));
+        }
+        el.closeRulesBtn.addEventListener('click', () => el.rulesModal.classList.add('hidden'));
+        el.rulesGotItBtn.addEventListener('click', () => el.rulesModal.classList.add('hidden'));
+
+        // Analysvy toggle
+        el.analysisToggle.addEventListener('change', (e) => {
+          el.analysisContent.classList.toggle('hidden', !e.target.checked);
+        });
+
+        // Tips toggle
+        el.toggleHintBtn.addEventListener('click', () => {
+          const isHidden = el.hintContentBox.classList.contains('hidden');
+          el.hintContentBox.classList.toggle('hidden', !isHidden);
+          el.toggleHintBtn.textContent = isHidden ? 'Dölj tips' : 'Visa tips';
+        });
+
+        // Rensa logg
+        el.clearLogBtn.addEventListener('click', () => {
+          GameState.moveLogs = [];
+          this.renderHistory();
+        });
+      },
+
+      switchTab(tab) {
+        GameState.appTab = tab;
+        const el = this.elements;
+
+        // Reset tab styles
+        const tabs = [
+          { name: 'play', btn: el.tabPlayBtn },
+          { name: 'lab', btn: el.tabLabBtn },
+          { name: 'challenges', btn: el.tabChallengesBtn }
+        ];
+
+        tabs.forEach(t => {
+          const isActive = t.name === tab;
+          t.btn.classList.toggle('bg-amber-500', isActive);
+          t.btn.classList.toggle('text-slate-950', isActive);
+          t.btn.classList.toggle('font-bold', isActive);
+          t.btn.classList.toggle('text-slate-400', !isActive);
+          t.btn.classList.toggle('hover:bg-slate-800/60', !isActive);
+        });
+
+        el.guidedLabSection.classList.toggle('hidden', tab !== 'lab');
+        el.challengesSection.classList.toggle('hidden', tab !== 'challenges');
+
+        if (tab === 'lab') {
+          this.setupLabStep(GameState.labStep);
+        }
+
+        SoundFx.playStickClick();
+      },
+
+      setViewLevel(level) {
+        GameState.viewLevel = level;
+        this.updateViewLevelUI();
+        this.renderAll();
+      },
+
+      updateViewLevelUI() {
+        const el = this.elements;
+        const isSimple = GameState.viewLevel === 'simple';
+        
+        el.viewLevelSimpleBtn.classList.toggle('bg-indigo-600', isSimple);
+        el.viewLevelSimpleBtn.classList.toggle('text-white', isSimple);
+        el.viewLevelSimpleBtn.classList.toggle('text-slate-400', !isSimple);
+
+        el.viewLevelAdvancedBtn.classList.toggle('bg-indigo-600', !isSimple);
+        el.viewLevelAdvancedBtn.classList.toggle('text-white', !isSimple);
+        el.viewLevelAdvancedBtn.classList.toggle('text-slate-400', isSimple);
+
+        // Visa / dölj formell analyssektion
+        el.advancedAnalysisSection.classList.toggle('hidden', isSimple);
+      },
+
+      changeLabStep(delta) {
+        const newStep = Math.max(1, Math.min(3, GameState.labStep + delta));
+        if (newStep !== GameState.labStep) {
+          GameState.labStep = newStep;
+          this.setupLabStep(newStep);
+        }
+      },
+
+      setupLabStep(step) {
+        GameState.labStep = step;
+        const el = this.elements;
+        el.labStepBadge.textContent = step;
+
+        const dots = el.labStepDots.children;
+        for (let i = 0; i < dots.length; i++) {
+          dots[i].className = i === step - 1 ? 'w-2.5 h-2.5 rounded-full bg-emerald-400' : 'w-2.5 h-2.5 rounded-full bg-slate-700';
+        }
+
+        el.labPrevBtn.disabled = step === 1;
+        el.labNextBtn.disabled = step === 3;
+
+        if (step === 1) {
+          el.labStepTitle.textContent = 'Nivå 1: Spegelstrategin (2 högar)';
+          el.labStepPrompt.innerHTML = 'Två identiska högar (3 och 3). Fråga: <em>Kan datorn någonsin vinna om du alltid härmar motståndarens drag i den andra högen?</em>';
+          el.labPedagogicalTipText.textContent = 'Upptäck symmetrin! Varje drag du gör kan speglas exakt. Den som rör först tvingas lämna ett asymmetriskt bräde.';
+          GameState.reset([3, 3]);
+          this.setRule('normal');
+        } else if (step === 2) {
+          el.labStepTitle.textContent = 'Nivå 2: En-sticke-fällan (Slutspel & Misère)';
+          el.labStepPrompt.innerHTML = 'Konfiguration [1, 1, 2] i Misère. Fråga: <em>Hur många stickor ska du plocka från 2-högen för att tvinga datorn att ta sista stickan?</em>';
+          el.labPedagogicalTipText.textContent = 'I Misère vill du lämna ett UDDA antal ettor (1, 3, 5...) till motståndaren. Om du tar hela 2-högen lämnar du 2 ettor (jämnt = du förlorar!).';
+          GameState.reset([1, 1, 2]);
+          this.setRule('misere');
+        } else if (step === 3) {
+          el.labStepTitle.textContent = 'Nivå 3: Det magiska talet & 2-potenser (3 högar)';
+          el.labStepPrompt.innerHTML = 'Konfiguration [3, 4, 5]. Fråga: <em>Kolla paritetsmätaren nedan! Hur kan du ta bort stickor så att alla blockstorlekar (4, 2, 1) får en partner?</em>';
+          el.labPedagogicalTipText.textContent = 'Titta på paritetsmätarna! Om alla block har jämnt antal (grönt) vinner du. Hitta vilket drag som gör alla mätare gröna!';
+          GameState.reset([3, 4, 5]);
+          this.setRule('normal');
+        }
+
+        SoundFx.playStickClick();
+        this.renderAll();
+      },
+
+      loadChallenge(chId) {
+        if (chId === '1') {
+          GameState.reset([1, 2, 3]);
+          this.setRule('normal');
+        } else if (chId === '2') {
+          GameState.reset([3, 4, 5]);
+          this.setRule('normal');
+        } else if (chId === '3') {
+          GameState.reset([1, 1, 2]);
+          this.setRule('misere');
+        } else if (chId === '4') {
+          GameState.reset([5, 5]);
+          this.setRule('normal');
+        }
+
+        SoundFx.playStickClick();
+        this.renderAll();
+        this.elements.quickStatusText.textContent = `Kluring ${chId} är laddad på spelbordet!`;
+      },
+
+      checkHypothesis(userPredictedBalance) {
+        if (GameState.selectedHeapIndex === null || GameState.selectedCount <= 0) {
+          this.flashErrorMessage('Välj först stickor i en hög innan du testar din hypotes!');
+          return;
+        }
+
+        // Simulera framtida bräde
+        const simulatedHeaps = [...GameState.heaps];
+        simulatedHeaps[GameState.selectedHeapIndex] -= GameState.selectedCount;
+
+        const nextNimSum = NimEngine.getNimSum(simulatedHeaps);
+        const actuallyBalanced = nextNimSum === 0;
+
+        const el = this.elements.hypothesisFeedback;
+        el.classList.remove('hidden');
+
+        if (userPredictedBalance === actuallyBalanced) {
+          SoundFx.playStickClick();
+          el.className = 'text-xs py-2 px-3 rounded-lg font-bold bg-emerald-950/70 border border-emerald-500/40 text-emerald-300';
+          if (actuallyBalanced) {
+            el.innerHTML = `🎯 <strong>Helt rätt gissat!</strong> Draget återställer perfekt balans (alla 2-potensblock har par, Nim-summa = 0). Du ger motståndaren en säker förlustposition!`;
+          } else {
+            el.innerHTML = `🎯 <strong>Rätt observerat!</strong> Draget lämnar brädet i obalans (Nim-summa = ${nextNimSum}). Motståndaren kan utnyttja detta om den spelar optimalt!`;
+          }
+        } else {
+          SoundFx.playError();
+          el.className = 'text-xs py-2 px-3 rounded-lg font-bold bg-amber-950/70 border border-amber-500/40 text-amber-300';
+          if (actuallyBalanced) {
+            el.innerHTML = `💡 <strong>Överraskning!</strong> Draget lämnar faktiskt brädet i <em>balans</em> (Nim-summa = 0). Alla block har nu en partner!`;
+          } else {
+            el.innerHTML = `💡 <strong>Inte riktigt!</strong> Draget lämnar ett eller flera block utan partner (Nim-summa = ${nextNimSum}), vilket innebär <em>obalans</em>.`;
+          }
+        }
+      },
+
+      updateSoundUI() {
+        const isEnabled = SoundFx.enabled;
+        const el = this.elements;
+        if (el.soundOnIcon) el.soundOnIcon.classList.toggle('hidden', !isEnabled);
+        if (el.soundOffIcon) el.soundOffIcon.classList.toggle('hidden', isEnabled);
+        if (el.soundLabel) {
+          el.soundLabel.textContent = isEnabled ? 'Ljud: På' : 'Ljud: Av';
+          el.soundLabel.classList.toggle('text-emerald-400', isEnabled);
+          el.soundLabel.classList.toggle('text-rose-400', !isEnabled);
+        }
+        if (el.soundToggleBtn) {
+          el.soundToggleBtn.setAttribute('title', isEnabled ? 'Ljud på (klicka för att stänga av)' : 'Ljud av (klicka för att sätta på)');
+          el.soundToggleBtn.classList.toggle('border-emerald-500/40', isEnabled);
+          el.soundToggleBtn.classList.toggle('border-rose-500/40', !isEnabled);
+        }
+      },
+
+      flashErrorMessage(msg) {
+        const textEl = this.elements.quickStatusText;
+        const alertBox = this.elements.quickStatusAlert;
+        if (!textEl) return;
+        textEl.textContent = `⚠️ ${msg}`;
+        textEl.className = 'text-rose-400 font-bold transition-all';
+        if (alertBox) {
+          alertBox.classList.add('bg-rose-950/30', 'ring-1', 'ring-rose-500/40', 'rounded-xl', 'p-2');
+        }
+        clearTimeout(this._errorTimer);
+        this._errorTimer = setTimeout(() => {
+          if (textEl) {
+            textEl.className = 'text-slate-400 transition-all';
+            this.updateActionControls();
+          }
+          if (alertBox) {
+            alertBox.classList.remove('bg-rose-950/30', 'ring-1', 'ring-rose-500/40', 'rounded-xl', 'p-2');
+          }
+        }, 2800);
+      },
+
+      setMode(mode) {
+        if (GameState.mode === mode) return;
+        GameState.mode = mode;
+        this.elements.modeAiBtn.classList.toggle('bg-amber-500', mode === 'ai');
+        this.elements.modeAiBtn.classList.toggle('text-slate-950', mode === 'ai');
+        this.elements.modeAiBtn.classList.toggle('text-slate-400', mode !== 'ai');
+
+        this.elements.modePvpBtn.classList.toggle('bg-amber-500', mode === 'pvp');
+        this.elements.modePvpBtn.classList.toggle('text-slate-950', mode === 'pvp');
+        this.elements.modePvpBtn.classList.toggle('text-slate-400', mode !== 'pvp');
+
+        this.elements.aiDifficultyWrapper.classList.toggle('opacity-40', mode !== 'ai');
+        this.elements.aiDifficultyWrapper.classList.toggle('pointer-events-none', mode !== 'ai');
+
+        GameState.reset();
+        this.renderAll();
+      },
+
+      setRule(rule) {
+        if (GameState.rule === rule) return;
+        GameState.rule = rule;
+        this.elements.ruleNormalBtn.classList.toggle('bg-amber-500', rule === 'normal');
+        this.elements.ruleNormalBtn.classList.toggle('text-slate-950', rule === 'normal');
+        this.elements.ruleNormalBtn.classList.toggle('text-slate-400', rule !== 'normal');
+
+        this.elements.ruleMisereBtn.classList.toggle('bg-amber-500', rule === 'misere');
+        this.elements.ruleMisereBtn.classList.toggle('text-slate-950', rule === 'misere');
+        this.elements.ruleMisereBtn.classList.toggle('text-slate-400', rule !== 'misere');
+
+        GameState.reset();
+        this.renderAll();
+      },
+
+      setDifficulty(diff, playSound = true) {
+        GameState.difficulty = diff;
+        this.elements.diffButtons.forEach(btn => {
+          const isSelected = btn.getAttribute('data-diff') === diff;
+          btn.classList.toggle('bg-indigo-600', isSelected);
+          btn.classList.toggle('text-white', isSelected);
+          btn.classList.toggle('font-semibold', isSelected);
+          btn.classList.toggle('shadow', isSelected);
+          btn.classList.toggle('text-slate-400', !isSelected);
+          btn.classList.toggle('font-medium', !isSelected);
+        });
+        if (playSound) SoundFx.playStickClick();
+        this.renderAnalysis();
+      },
+
+      selectStick(heapIndex, stickOrderIndex) {
+        if (GameState.isGameOver) {
+          SoundFx.playError();
+          this.flashErrorMessage('Spelet är redan avslutat. Klicka på "Starta om" för att spela igen!');
+          return;
+        }
+        if (GameState.isAiThinking || (GameState.mode === 'ai' && GameState.currentPlayer === 2)) {
+          SoundFx.playError();
+          this.flashErrorMessage('Vänta, datorn tänker på sitt drag...');
+          return;
+        }
+
+        if (GameState.selectedHeapIndex !== null && GameState.selectedHeapIndex !== heapIndex && GameState.selectedCount > 0) {
+          SoundFx.playError();
+          this.flashErrorMessage('Regelbrott: Du får endast plocka från EN hög per drag!');
+          return;
+        }
+
+        SoundFx.playStickClick();
+
+        const currentHeapCount = GameState.heaps[heapIndex];
+        const sticksToTake = stickOrderIndex + 1;
+
+        if (GameState.selectedHeapIndex === heapIndex && GameState.selectedCount === sticksToTake) {
+          GameState.selectedHeapIndex = null;
+          GameState.selectedCount = 0;
+        } else {
+          GameState.selectedHeapIndex = heapIndex;
+          GameState.selectedCount = Math.min(sticksToTake, currentHeapCount);
+        }
+
+        this.renderHeaps();
+        this.updateActionControls();
+      },
+
+      selectHeapCount(heapIndex, count) {
+        if (GameState.isGameOver) {
+          SoundFx.playError();
+          this.flashErrorMessage('Spelet är redan avslutat.');
+          return;
+        }
+        if (GameState.isAiThinking || (GameState.mode === 'ai' && GameState.currentPlayer === 2)) {
+          SoundFx.playError();
+          this.flashErrorMessage('Vänta medan datorn gör sitt drag.');
+          return;
+        }
+
+        if (GameState.selectedHeapIndex !== null && GameState.selectedHeapIndex !== heapIndex && GameState.selectedCount > 0) {
+          SoundFx.playError();
+          this.flashErrorMessage('Regelbrott: Du får endast ta stickor från EN hög per drag!');
+          return;
+        }
+
+        SoundFx.playStickClick();
+        GameState.selectedHeapIndex = heapIndex;
+        GameState.selectedCount = Math.max(1, Math.min(count, GameState.heaps[heapIndex]));
+        
+        this.renderHeaps();
+        this.updateActionControls();
+      },
+
+      executePlayerMove() {
+        if (GameState.isGameOver || GameState.isAiThinking) return;
+        if (GameState.selectedHeapIndex === null || GameState.selectedCount <= 0) return;
+        
+        const player = GameState.currentPlayer;
+        const heapIdx = GameState.selectedHeapIndex;
+        const count = GameState.selectedCount;
+
+        SoundFx.playRemove();
+        GameState.recordMove(player, heapIdx, count);
+
+        // Nollställ hypotesrutan
+        this.elements.hypothesisContainer.classList.add('hidden');
+        this.elements.hypothesisFeedback.classList.add('hidden');
+
+        if (NimEngine.isTerminal(GameState.heaps)) {
+          this.handleGameOver(player);
+          return;
+        }
+
+        GameState.currentPlayer = player === 1 ? 2 : 1;
+        this.renderAll();
+
+        if (GameState.mode === 'ai' && GameState.currentPlayer === 2) {
+          AIPlayer.makeMove((aiMove) => {
+            if (!aiMove) return;
+            SoundFx.playRemove();
+            GameState.recordMove(2, aiMove.heapIndex, aiMove.countToRemove);
+
+            if (NimEngine.isTerminal(GameState.heaps)) {
+              this.handleGameOver(2);
+            } else {
+              GameState.currentPlayer = 1;
+              this.renderAll();
+            }
+          });
+        }
+      },
+
+      handleGameOver(lastPlayer) {
+        GameState.isGameOver = true;
+        const winner = NimEngine.getWinner(lastPlayer, GameState.rule);
+        GameState.winner = winner;
+
+        SoundFx.playWin();
+        this.renderAll();
+
+        const el = this.elements;
+        const winnerName = GameState.getPlayerName(winner);
+        el.winnerTitle.textContent = `${winnerName} vinner!`;
+        
+        if (GameState.rule === 'normal') {
+          el.winnerSubtitle.textContent = 'Normalt spel – Sista stickan avgjorde';
+          el.winnerDescription.textContent = `${winnerName} tog den allra sista stickan och säkrade segern enligt de klassiska reglerna!`;
+        } else {
+          el.winnerSubtitle.textContent = 'Misère-regler – Undvek sista stickan';
+          const loserName = GameState.getPlayerName(lastPlayer);
+          el.winnerDescription.textContent = `${loserName} tvingades ta den allra sista stickan och förlorar därmed. ${winnerName} vinner!`;
+        }
+
+        el.gameOverModal.classList.remove('hidden');
+      },
+
+      // ================= RENDERING =================
+      renderAll() {
+        this.renderHeaps();
+        this.updateStatusIndicators();
+        this.updateActionControls();
+        this.renderParityAndPowerOfTwo();
+        this.renderAnalysis();
+        this.renderHistory();
+      },
+
+      renderHeaps() {
+        const container = this.elements.heapsContainer;
+        container.innerHTML = '';
+
+        GameState.heaps.forEach((count, heapIndex) => {
+          const heapLetter = String.fromCharCode(65 + heapIndex);
+          const isSelectedHeap = GameState.selectedHeapIndex === heapIndex;
+          const selectedInThisHeap = isSelectedHeap ? GameState.selectedCount : 0;
+
+          const heapCard = document.createElement('div');
+          heapCard.className = `flex flex-col items-center p-4 rounded-2xl transition-all duration-200 min-w-[100px] sm:min-w-[130px] ${
+            isSelectedHeap 
+              ? 'bg-slate-800/90 ring-2 ring-amber-500 shadow-xl shadow-amber-950/30' 
+              : 'bg-slate-900/60 hover:bg-slate-800/40 border border-slate-800'
+          }`;
+
+          // Hög-rubrik
+          const header = document.createElement('div');
+          header.className = 'flex items-center justify-between w-full mb-3 px-1';
+          header.innerHTML = `
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Hög ${heapLetter}</span>
+            <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-full ${count > 0 ? 'bg-slate-800 text-amber-400' : 'bg-slate-950 text-slate-600'}">
+              ${count} st
+            </span>
+          `;
+          heapCard.appendChild(header);
+
+          // Stick-behållare
+          const sticksWrapper = document.createElement('div');
+          sticksWrapper.className = 'w-full flex flex-col-reverse gap-1.5 py-2 px-1 items-center min-h-[160px] justify-start';
+
+          if (count === 0) {
+            sticksWrapper.innerHTML = `
+              <div class="h-36 flex flex-col items-center justify-center text-slate-600 text-[11px] font-medium italic">
+                <span>Tom hög</span>
+              </div>
+            `;
+          } else {
+            for (let i = 0; i < count; i++) {
+              const stickNumberFromTop = count - i;
+              const isMarkedForRemoval = isSelectedHeap && stickNumberFromTop <= selectedInThisHeap;
+
+              const stick = document.createElement('button');
+              stick.type = 'button';
+              stick.className = `stick-item w-full h-6 sm:h-7 rounded-md flex items-center shadow-stick relative cursor-pointer border border-amber-900/40 select-none group ${
+                isMarkedForRemoval ? 'stick-removing' : 'hover:scale-[1.03] hover:shadow-stick-hover'
+              }`;
+
+              stick.innerHTML = `
+                <div class="stick-head w-4 sm:w-5 h-full rounded-l-md flex-shrink-0 shadow-inner"></div>
+                <div class="stick-body flex-1 h-full rounded-r-md flex items-center justify-between px-2 text-[10px] font-mono text-slate-900/70 font-bold">
+                  <span class="opacity-40 group-hover:opacity-80">#${i + 1}</span>
+                  ${isMarkedForRemoval ? '<span class="text-red-700 font-extrabold text-[9px] uppercase tracking-tighter">Bort</span>' : ''}
+                </div>
+              `;
+
+              stick.addEventListener('click', () => {
+                this.selectStick(heapIndex, stickNumberFromTop - 1);
+              });
+
+              sticksWrapper.appendChild(stick);
+            }
+          }
+          heapCard.appendChild(sticksWrapper);
+
+          // Snabbknappar
+          if (count > 0) {
+            const footer = document.createElement('div');
+            footer.className = 'w-full mt-3 pt-2.5 border-t border-slate-800 flex items-center justify-between gap-1';
+            
+            const takeOneBtn = document.createElement('button');
+            takeOneBtn.className = 'flex-1 py-1 px-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold transition';
+            takeOneBtn.textContent = 'Ta 1';
+            takeOneBtn.addEventListener('click', () => this.selectHeapCount(heapIndex, 1));
+            footer.appendChild(takeOneBtn);
+
+            if (count > 1) {
+              const takeAllBtn = document.createElement('button');
+              takeAllBtn.className = 'flex-1 py-1 px-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-400 text-[10px] font-semibold transition';
+              takeAllBtn.textContent = 'Alla';
+              takeAllBtn.addEventListener('click', () => this.selectHeapCount(heapIndex, count));
+              footer.appendChild(takeAllBtn);
+            }
+
+            heapCard.appendChild(footer);
+          }
+
+          container.appendChild(heapCard);
+        });
+      },
+
+      renderParityAndPowerOfTwo() {
+        const report = NimEngine.getParityReport(GameState.heaps);
+        const el = this.elements;
+
+        // 1. Overall Parity Pill
+        if (report.allBalanced) {
+          el.overallParityPill.className = 'text-xs px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30';
+          el.overallParityPill.innerHTML = `
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>⚖️ Perfekt Jämvikt (Säker position / Balans)</span>
+          `;
+        } else {
+          el.overallParityPill.className = 'text-xs px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/30';
+          el.overallParityPill.innerHTML = `
+            <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+            <span>⚠️ Obalans i blocken (Möjlighet till vinstdrag!)</span>
+          `;
+        }
+
+        // 2. Paritetsmätare per blockstorlek [8, 4, 2, 1]
+        el.parityMetersContainer.innerHTML = '';
+        const blockSpecs = [
+          { size: 8, label: '8-block (2³)', color: 'indigo' },
+          { size: 4, label: '4-block (2²)', color: 'amber' },
+          { size: 2, label: '2-block (2¹)', color: 'emerald' },
+          { size: 1, label: '1-block (2⁰)', color: 'rose' },
+        ];
+
+        blockSpecs.forEach(spec => {
+          const info = report.status[spec.size];
+          const isBalanced = info.isEven;
+          const card = document.createElement('div');
+          card.className = `p-3 rounded-xl border transition-all flex flex-col justify-between ${
+            isBalanced 
+              ? 'bg-slate-900/80 border-slate-800' 
+              : 'bg-amber-950/20 border-amber-500/40 ring-1 ring-amber-500/20'
+          }`;
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-300">${spec.label}</span>
+              <span class="text-xs font-mono font-bold ${isBalanced ? 'text-emerald-400' : 'text-amber-400'}">
+                ${info.count} st
+              </span>
+            </div>
+            
+            <div class="my-2 flex items-center justify-center py-1">
+              ${isBalanced 
+                ? `<div class="flex items-center gap-1 text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                     <span>⚖️ Jämnt par</span>
+                     <span class="text-[10px] text-emerald-500/80">(${info.pairs} par)</span>
+                   </div>`
+                : `<div class="flex items-center gap-1 text-[11px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/30">
+                     <span>⚠️ Udda block!</span>
+                     <span class="text-[10px] text-amber-300">Saknar par</span>
+                   </div>`
+              }
+            </div>
+
+            <div class="text-[10px] text-slate-500 text-center">
+              ${isBalanced ? 'Tar ut varandra i spelet' : 'Måste pariseras för vinst'}
+            </div>
+          `;
+          el.parityMetersContainer.appendChild(card);
+        });
+
+        // 3. 2-potensnedbrytning per hög
+        el.powerOfTwoPilesContainer.innerHTML = '';
+        GameState.heaps.forEach((count, idx) => {
+          const heapLetter = String.fromCharCode(65 + idx);
+          const blocks = NimEngine.getPowerOfTwoBlocks(count);
+
+          const pileCard = document.createElement('div');
+          pileCard.className = 'p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col gap-2';
+
+          let blocksHtml = '';
+          if (count === 0) {
+            blocksHtml = '<div class="text-slate-600 text-[11px] italic">Inga block (Tom)</div>';
+          } else {
+            blocksHtml = '<div class="flex flex-wrap gap-1.5 items-center">';
+            blocks.forEach(b => {
+              let badgeColor = 'bg-slate-800 text-slate-300 border-slate-700';
+              if (b === 8) badgeColor = 'bg-indigo-950/70 text-indigo-300 border-indigo-700/60';
+              if (b === 4) badgeColor = 'bg-amber-950/70 text-amber-300 border-amber-700/60';
+              if (b === 2) badgeColor = 'bg-emerald-950/70 text-emerald-300 border-emerald-700/60';
+              if (b === 1) badgeColor = 'bg-rose-950/70 text-rose-300 border-rose-700/60';
+
+              blocksHtml += `
+                <div class="flex items-center gap-1 px-2 py-1 rounded-lg border font-mono font-bold text-xs ${badgeColor}">
+                  <span>[${b}]</span>
+                  <span class="text-[9px] font-sans font-normal opacity-70">${b}st</span>
+                </div>
+              `;
+            });
+            blocksHtml += '</div>';
+          }
+
+          pileCard.innerHTML = `
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-1.5">
+              <span class="text-xs font-bold text-slate-300">Hög ${heapLetter}</span>
+              <span class="text-xs font-mono font-bold text-amber-400">${count} stickor</span>
+            </div>
+            ${blocksHtml}
+          `;
+
+          el.powerOfTwoPilesContainer.appendChild(pileCard);
+        });
+      },
+
+      updateStatusIndicators() {
+        const el = this.elements;
+        const player = GameState.currentPlayer;
+        const isAi = GameState.mode === 'ai';
+
+        if (GameState.isGameOver) {
+          el.turnAvatar.className = 'w-11 h-11 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-slate-400';
+          el.turnAvatar.innerHTML = '★';
+          el.turnText.textContent = 'Spelet är avslutat';
+          el.turnInstruction.textContent = 'Klicka på "Starta om" för att spela igen!';
+          el.aiThinkingBadge.classList.add('hidden');
+          return;
+        }
+
+        if (isAi && player === 2) {
+          el.turnAvatar.className = 'w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-lg shadow-indigo-950/50';
+          el.turnAvatar.innerHTML = `
+            <svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            </svg>
+          `;
+          el.turnText.textContent = 'Datorns tur';
+          el.turnInstruction.textContent = 'Datorn analyserar 2-potenser och balanserar brädet...';
+          el.aiThinkingBadge.classList.remove('hidden');
+        } else {
+          el.turnAvatar.className = player === 1 
+            ? 'w-11 h-11 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-md'
+            : 'w-11 h-11 rounded-2xl bg-cyan-500 text-slate-950 flex items-center justify-center font-bold shadow-md';
+          el.turnAvatar.innerHTML = `<span class="text-base font-bold">${player}</span>`;
+          el.turnText.textContent = `Spelare ${player}:s tur`;
+          el.turnInstruction.textContent = 'Klicka på stickor i en hög för att välja hur många du vill ta bort.';
+          el.aiThinkingBadge.classList.add('hidden');
+        }
+
+        // Coach text uppdatering
+        el.coachThoughtText.textContent = GameState.lastAiExplanation;
+
+        // Regel-badge
+        el.ruleBadge.innerHTML = GameState.rule === 'normal'
+          ? 'Mål: <span class="text-amber-400 font-semibold">Ta sista stickan</span>'
+          : 'Mål: <span class="text-rose-400 font-semibold">Tvinga motståndaren att ta sista</span>';
+      },
+
+      updateActionControls() {
+        const el = this.elements;
+        const hasSelection = GameState.selectedHeapIndex !== null && GameState.selectedCount > 0;
+        const isUserTurn = !(GameState.mode === 'ai' && GameState.currentPlayer === 2) && !GameState.isGameOver;
+
+        if (hasSelection && isUserTurn) {
+          el.selectionSummary.classList.remove('hidden');
+          const heapLetter = String.fromCharCode(65 + GameState.selectedHeapIndex);
+          el.selectionSummaryText.textContent = `${GameState.selectedCount} st från Hög ${heapLetter}`;
+          
+          el.confirmMoveBtn.disabled = false;
+          el.confirmMoveBtn.className = 'px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs tracking-wide shadow-lg shadow-amber-950/40 transition-all duration-200 flex items-center gap-2 cursor-pointer active:scale-95 animate-pulse-subtle';
+          el.quickStatusText.textContent = `Klicka "Bekräfta drag" för att ta bort ${GameState.selectedCount} stickor från Hög ${heapLetter}.`;
+
+          // Visa hypotes-rutan när användaren gjort ett val
+          el.hypothesisContainer.classList.remove('hidden');
+        } else {
+          el.selectionSummary.classList.add('hidden');
+          el.confirmMoveBtn.disabled = true;
+          el.confirmMoveBtn.className = 'px-5 py-2 rounded-xl bg-slate-800 text-slate-500 cursor-not-allowed font-semibold text-xs tracking-wide shadow-none transition-all duration-200 flex items-center gap-2';
+          el.quickStatusText.textContent = isUserTurn 
+            ? 'Klicka på valfri sticka för att markera draget.'
+            : 'Väntar på motståndarens drag...';
+
+          el.hypothesisContainer.classList.add('hidden');
+          el.hypothesisFeedback.classList.add('hidden');
+        }
+
+        // Ångra-knapp
+        const canUndo = GameState.history.length > 0 && !GameState.isAiThinking;
+        el.undoMoveBtn.disabled = !canUndo;
+        el.undoMoveBtn.classList.toggle('text-slate-300', canUndo);
+        el.undoMoveBtn.classList.toggle('text-slate-600', !canUndo);
+        el.undoMoveBtn.classList.toggle('cursor-pointer', canUndo);
+        el.undoMoveBtn.classList.toggle('cursor-not-allowed', !canUndo);
+      },
+
+      renderAnalysis() {
+        const el = this.elements;
+        const heaps = GameState.heaps;
+        const nimSum = NimEngine.getNimSum(heaps);
+
+        // 1. Rendera tabellrader
+        el.binaryTableBody.innerHTML = '';
+        heaps.forEach((count, idx) => {
+          const heapLetter = String.fromCharCode(65 + idx);
+          const bits = NimEngine.toBinary4Bit(count);
+
+          const row = document.createElement('tr');
+          row.className = 'hover:bg-slate-900/80 transition';
+          row.innerHTML = `
+            <td class="py-2 px-3 text-left font-sans font-medium text-slate-300">Hög ${heapLetter}</td>
+            <td class="py-2 px-2 text-slate-200 font-bold">${count}</td>
+            <td class="py-2 px-2 ${bits[0] === 1 ? 'text-indigo-400 font-bold bg-indigo-950/30' : 'text-slate-600'}">${bits[0]}</td>
+            <td class="py-2 px-2 ${bits[1] === 1 ? 'text-indigo-400 font-bold bg-indigo-950/30' : 'text-slate-600'}">${bits[1]}</td>
+            <td class="py-2 px-2 ${bits[2] === 1 ? 'text-indigo-400 font-bold bg-indigo-950/30' : 'text-slate-600'}">${bits[2]}</td>
+            <td class="py-2 px-2 ${bits[3] === 1 ? 'text-indigo-400 font-bold bg-indigo-950/30' : 'text-slate-600'}">${bits[3]}</td>
+          `;
+          el.binaryTableBody.appendChild(row);
+        });
+
+        // 2. Beräkna XOR-summor i footer
+        const xorBits = NimEngine.toBinary4Bit(nimSum);
+        el.tableDecimalSum.textContent = nimSum;
+        el.tableXorBit3.textContent = xorBits[0];
+        el.tableXorBit2.textContent = xorBits[1];
+        el.tableXorBit1.textContent = xorBits[2];
+        el.tableXorBit0.textContent = xorBits[3];
+
+        // 3. Jämviktsstatus
+        if (nimSum === 0) {
+          el.balanceStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
+          el.balanceStatusBadge.className = 'mt-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col gap-1';
+          el.balanceStatusTitle.className = 'font-bold text-sm text-emerald-400';
+          el.balanceStatusTitle.textContent = 'I balans (Nim-summa = 0 / Säker position)';
+          el.balanceStatusDesc.textContent = 'Detta är en P-position. Alla 2-potenskolumner har jämnt antal ettor. Den spelare som gjorde förra draget har en matematisk vinstfördel vid optimalt spel!';
+        } else {
+          el.balanceStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+          el.balanceStatusBadge.className = 'mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col gap-1';
+          el.balanceStatusTitle.className = 'font-bold text-sm text-amber-400';
+          el.balanceStatusTitle.textContent = `I obalans (Nim-summa = ${nimSum} / Vinstchans)`;
+          el.balanceStatusDesc.textContent = 'Detta är en N-position. Minst en bitkolumn har ett udda antal ettor. Den aktive spelaren har en garanterad vinstväg genom att återställa pariteten till 0!';
+        }
+
+        // 4. Matematiskt dragtips
+        const bestMove = NimEngine.getWinningMove(heaps, GameState.rule);
+        if (bestMove && !NimEngine.isTerminal(heaps)) {
+          const heapLetter = String.fromCharCode(65 + bestMove.heapIndex);
+          if (bestMove.isDefensive) {
+            el.hintContentBox.innerHTML = `
+              <div class="text-amber-400 font-semibold mb-0.5">Defensivt läge (XOR = 0)</div>
+              <div>Ingen omedelbar vinstväg. Prova att ta 1 sticka från Hög ${heapLetter} och hoppas på ett motståndarmisstag.</div>
+            `;
+          } else {
+            el.hintContentBox.innerHTML = `
+              <div class="text-emerald-400 font-semibold mb-0.5">Vinnande drag identifierat:</div>
+              <div>Ta <strong>${bestMove.countToRemove} stickor</strong> från <strong>Hög ${heapLetter}</strong> (lämna ${heaps[bestMove.heapIndex] - bestMove.countToRemove} st). Detta nollställer Nim-summan till 0.</div>
+            `;
+          }
+        } else {
+          el.hintContentBox.innerHTML = 'Inga drag återstår.';
+        }
+      },
+
+      renderHistory() {
+        const container = this.elements.moveLogContainer;
+        if (GameState.moveLogs.length === 0) {
+          container.innerHTML = '<div class="text-slate-500 text-xs italic py-2">Inga drag har gjorts ännu. Gör ett drag för att starta omgången.</div>';
+          return;
+        }
+
+        container.innerHTML = '';
+        GameState.moveLogs.forEach((log) => {
+          const row = document.createElement('div');
+          row.className = 'py-1 px-2.5 rounded-lg bg-slate-950/70 border border-slate-800/80 flex items-center justify-between';
+          row.innerHTML = `
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] text-slate-500">${log.time}</span>
+              <span class="font-bold ${log.player === 1 ? 'text-amber-400' : 'text-indigo-400'}">${log.playerName}:</span>
+              <span>Tog ${log.countToRemove} st från Hög ${log.heapLabel}</span>
+            </div>
+            <div class="text-slate-500 text-[11px]">
+              Kvar: [${log.remainingHeaps.join(', ')}]
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
+    };
+
+    // ================= THEME MANAGER =================
+    const ThemeManager = {
+      current: 'dark',
+
+      init() {
+        try {
+          const saved = localStorage.getItem('mattelab_theme');
+          if (saved === 'light' || saved === 'dark') {
+            this.set(saved, false);
+            return;
+          }
+        } catch(e) {}
+        this.set('dark', false);
+      },
+
+      set(theme, notify = true) {
+        this.current = theme === 'light' ? 'light' : 'dark';
+        try { localStorage.setItem('mattelab_theme', this.current); } catch(e){}
+
+        const root = document.documentElement;
+        const body = document.body;
+        if (this.current === 'light') {
+          root.classList.add('light');
+          root.classList.remove('dark');
+          body.classList.add('light');
+          body.classList.remove('dark');
+        } else {
+          root.classList.add('dark');
+          root.classList.remove('light');
+          body.classList.add('dark');
+          body.classList.remove('light');
+        }
+
+        this.updateButton();
+
+        if (notify) {
+          try {
+            window.parent?.postMessage({ type: 'NIM_THEME_STATUS', theme: this.current }, '*');
+          } catch(e){}
+        }
+      },
+
+      toggle() {
+        this.set(this.current === 'dark' ? 'light' : 'dark', true);
+      },
+
+      updateButton() {
+        const btn = document.getElementById('themeToggleBtn');
+        if (!btn) return;
+        const isDark = this.current === 'dark';
+        btn.innerHTML = isDark
+          ? `<svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+             </svg>
+             <span class="hidden sm:inline">Ljust läge</span>`
+          : `<svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+             </svg>
+             <span class="hidden sm:inline">Mörkt läge</span>`;
+        btn.title = isDark ? 'Växla till ljust läge' : 'Växla till mörkt läge';
+      }
+    };
+
+    // Expose for same-origin iframe access
+    window.SoundFx = SoundFx;
+    window.ThemeManager = ThemeManager;
+    window.UIController = UIController;
+
+    // Listen to messages from parent window
+    window.addEventListener('message', (event) => {
+      if (!event.data) return;
+      if (event.data.type === 'TOGGLE_SOUND') {
+        SoundFx.toggle();
+        UIController.updateSoundUI();
+      } else if (event.data.type === 'SET_SOUND') {
+        SoundFx.enabled = !!event.data.enabled;
+        try { localStorage.setItem('nim_sound_enabled', SoundFx.enabled ? '1' : '0'); } catch(e){}
+        UIController.updateSoundUI();
+        try { window.parent?.postMessage({ type: 'NIM_SOUND_STATUS', enabled: SoundFx.enabled }, '*'); } catch(e){}
+      } else if (event.data.type === 'GET_SOUND_STATUS') {
+        try { window.parent?.postMessage({ type: 'NIM_SOUND_STATUS', enabled: SoundFx.enabled }, '*'); } catch(e){}
+      } else if (event.data.type === 'SET_THEME') {
+        if (event.data.theme === 'light' || event.data.theme === 'dark') {
+          ThemeManager.set(event.data.theme, false);
+        }
+      } else if (event.data.type === 'TOGGLE_THEME') {
+        ThemeManager.toggle();
+      } else if (event.data.type === 'GET_THEME_STATUS') {
+        try { window.parent?.postMessage({ type: 'NIM_THEME_STATUS', theme: ThemeManager.current }, '*'); } catch(e){}
+      } else if (event.data.type === 'OPEN_RULES') {
+        const modal = document.getElementById('rulesModal');
+        if (modal) modal.classList.remove('hidden');
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      ThemeManager.init();
+      UIController.init();
+      try {
+        window.parent?.postMessage({ type: 'NIM_SOUND_STATUS', enabled: SoundFx.enabled }, '*');
+        window.parent?.postMessage({ type: 'NIM_THEME_STATUS', theme: ThemeManager.current }, '*');
+      } catch (e) {}
+    });
+  </script>
+</body>
+</html>

@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LucideIcon } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 interface SidebarProps {
   currentLab: Lab;
@@ -57,6 +58,8 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [openCategories, setOpenCategories] = useState<string[]>([]);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     if (currentLab !== Lab.HOME) {
@@ -136,6 +139,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Lightbulb,
       labs: [
         { id: Lab.MAGIC_SQUARE, label: 'Magiska Kvadrater', icon: Square },
+        { id: Lab.NIM, label: 'Nim-spelet', icon: Sparkles },
         { id: Lab.ICE_CREAM, label: 'Glass-labbet', icon: IceCream },
         { id: Lab.RICH_PROBLEM_LAB, label: 'Det Rika Problemlabbet', icon: Lightbulb }
       ]
@@ -146,10 +150,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     <motion.div 
       initial={false}
       animate={{ width: isExpanded ? 300 : 80 }}
-      className="bg-white border-r border-stone-200 flex flex-col h-screen sticky top-0 z-50 shadow-sm"
+      className={`border-r flex flex-col h-screen sticky top-0 z-50 shadow-sm transition-colors duration-200 ${
+        isDark ? 'bg-stone-900 border-stone-800 text-stone-100' : 'bg-white border-stone-200 text-stone-900'
+      }`}
     >
       {/* Header / Logo */}
-      <div className="p-6 flex items-center justify-between border-b border-stone-100">
+      <div className={`p-6 flex items-center justify-between border-b ${isDark ? 'border-stone-800' : 'border-stone-100'}`}>
         <div 
           className="flex items-center space-x-3 cursor-pointer overflow-hidden"
           onClick={() => onSelectLab(Lab.HOME)}
@@ -165,7 +171,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 exit={{ opacity: 0, x: -10 }}
                 className="flex flex-col"
               >
-                <span className="font-serif font-bold text-lg text-stone-900 italic whitespace-nowrap leading-tight">Mattelab</span>
+                <span className={`font-serif font-bold text-lg italic whitespace-nowrap leading-tight ${isDark ? 'text-stone-100' : 'text-stone-900'}`}>Mattelab</span>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400 whitespace-nowrap">Utforska matematiken</span>
               </motion.div>
             )}
@@ -174,7 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         
         <button 
           onClick={() => setIsExpanded(!isExpanded)}
-          className="p-2 hover:bg-stone-100 rounded-lg text-stone-400 transition-colors"
+          className={`p-2 rounded-lg text-stone-400 transition-colors ${isDark ? 'hover:bg-stone-800 hover:text-stone-200' : 'hover:bg-stone-100 hover:text-stone-600'}`}
         >
           <Menu size={20} />
         </button>
@@ -187,12 +193,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => onSelectLab(Lab.HOME)}
           className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all group mb-4 ${
             currentLab === Lab.HOME
-              ? 'bg-stone-900 text-white shadow-md'
-              : 'hover:bg-stone-50 text-stone-500 hover:text-stone-900'
+              ? isDark ? 'bg-stone-800 text-amber-400 shadow-md' : 'bg-stone-900 text-white shadow-md'
+              : isDark ? 'hover:bg-stone-800/80 text-stone-400 hover:text-stone-100' : 'hover:bg-stone-50 text-stone-500 hover:text-stone-900'
           }`}
           title={!isExpanded ? 'Hem' : ''}
         >
-          <Home size={20} className={currentLab === Lab.HOME ? 'text-white' : 'text-stone-400 group-hover:text-stone-600'} />
+          <Home size={20} className={currentLab === Lab.HOME ? (isDark ? 'text-amber-400' : 'text-white') : 'text-stone-400 group-hover:text-stone-300'} />
           {isExpanded && (
             <span className="font-bold text-xs uppercase tracking-widest whitespace-nowrap">Hem</span>
           )}
@@ -212,11 +218,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   onClick={() => toggleCategory(category.id)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all group ${
-                    isOpen && isExpanded ? 'bg-stone-50 text-stone-900' : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
+                    isOpen && isExpanded 
+                      ? (isDark ? 'bg-stone-800/80 text-stone-100' : 'bg-stone-50 text-stone-900') 
+                      : (isDark ? 'text-stone-400 hover:text-stone-100 hover:bg-stone-800/60' : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50')
                   } ${hasActiveLab && !isOpen ? 'border-l-4 border-amber-500 rounded-l-none' : ''}`}
                   title={!isExpanded ? category.label : ''}
                 >
-                  <category.icon size={20} className={isOpen || hasActiveLab ? 'text-amber-500' : 'text-stone-400 group-hover:text-stone-600'} />
+                  <category.icon size={20} className={isOpen || hasActiveLab ? 'text-amber-500' : 'text-stone-400 group-hover:text-stone-300'} />
                   {isExpanded && (
                     <span className="font-bold text-[11px] uppercase tracking-wider whitespace-nowrap flex-1 text-left">{category.label}</span>
                   )}
@@ -246,10 +254,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                             className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all group ${
                               currentLab === lab.id
                                 ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
-                                : 'hover:bg-stone-50 text-stone-500 hover:text-stone-900'
+                                : (isDark ? 'hover:bg-stone-800/70 text-stone-400 hover:text-stone-100' : 'hover:bg-stone-50 text-stone-500 hover:text-stone-900')
                             }`}
                           >
-                            <lab.icon size={16} className={currentLab === lab.id ? 'text-white' : 'text-stone-400 group-hover:text-stone-600'} />
+                            <lab.icon size={16} className={currentLab === lab.id ? 'text-white' : 'text-stone-400 group-hover:text-stone-300'} />
                             <span className="font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">{lab.label}</span>
                           </button>
                         ))
@@ -266,14 +274,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       </nav>
       
       {/* Footer Status & Teacher View */}
-      <div className="p-4 border-t border-stone-100 space-y-2">
+      <div className={`p-4 border-t space-y-2 ${isDark ? 'border-stone-800' : 'border-stone-100'}`}>
         {currentLab !== Lab.HOME && (
           <button
             onClick={onToggleTeacherView}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all group ${
               isTeacherViewOpen
-                ? 'bg-stone-900 text-white shadow-md'
-                : 'bg-stone-50 text-stone-500 hover:text-stone-900 border border-stone-100'
+                ? isDark ? 'bg-stone-800 text-white shadow-md' : 'bg-stone-900 text-white shadow-md'
+                : isDark ? 'bg-stone-800/60 text-stone-400 hover:text-stone-200 border border-stone-800' : 'bg-stone-50 text-stone-500 hover:text-stone-900 border border-stone-100'
             }`}
             title={!isExpanded ? 'Lärarvy' : ''}
           >
@@ -284,13 +292,17 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
 
-        <div className={`p-4 rounded-2xl transition-all ${isExpanded ? 'bg-stone-50 border border-stone-100' : 'bg-transparent border-none p-0 flex justify-center'}`}>
+        <div className={`p-4 rounded-2xl transition-all ${
+          isExpanded 
+            ? (isDark ? 'bg-stone-950/80 border border-stone-800/80' : 'bg-stone-50 border border-stone-100') 
+            : 'bg-transparent border-none p-0 flex justify-center'
+        }`}>
           {isExpanded ? (
             <>
               <p className="text-[10px] text-stone-400 uppercase tracking-widest mb-1 font-bold">Systemstatus</p>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                <p className="text-[11px] text-stone-600 font-medium">Ansluten till lab-server</p>
+                <p className={`text-[11px] font-medium ${isDark ? 'text-stone-300' : 'text-stone-600'}`}>Ansluten till lab-server</p>
               </div>
             </>
           ) : (

@@ -14,7 +14,8 @@ export enum Lab {
   TOWER_OF_HANOI = 'TOWER_OF_HANOI',
   ARCHITECT = 'ARCHITECT',
   PATTERN_TOWERS = 'PATTERN_TOWERS',
-  SNOTTRAN = 'SNOTTRAN'
+  SNOTTRAN = 'SNOTTRAN',
+  NIM = 'NIM'
 }
 
 export enum FrogType {
